@@ -1,0 +1,28 @@
+gmskmod:
+    name: GMSK Mod
+    inputs:
+        sym:
+            param: modulate@1
+    outputs:
+        0:
+            param: modulate@2
+    work:
+        functions:
+            - modulate:
+                ratio: 1:_n
+
+gmskdem:
+    name: GMSK Demod
+    settings:
+        functions:
+            - set_eq_bw:
+    inputs:
+        0:
+            param: demodulate@1
+    outputs:
+        sym:
+            param: demodulate@2
+    work:
+        functions:
+            - demodulate:
+                ratio: _n:1
