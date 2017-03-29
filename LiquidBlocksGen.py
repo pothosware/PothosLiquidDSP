@@ -1,3 +1,6 @@
+########################################################################
+## Parse the liquid dsp header
+########################################################################
 import os
 import sys
 import re
@@ -5,35 +8,138 @@ import re
 sys.path.append(os.path.dirname(__file__))
 import CppHeaderParser
 
-contents = open(sys.argv[1]).read()
-contents = contents.replace('typedef struct', 'typedef')
+def parseHeader(contents):
 
-#the lexer can only handle C++ style enums
-s = 0
-while True:
-    s = contents.find('typedef enum', s)
-    if s < 0: break
-    e = contents.find(';', s)
-    enum = contents[s:e]
-    name = re.findall('\w+', enum, re.MULTILINE)[-1]
-    contents = contents.replace(enum, enum.replace('typedef enum', 'enum %s'%name))
-    s = e
+    #stop warning, lexer doesn't understand restrict
+    contents = contents.replace('__restrict', '')
 
-header = CppHeaderParser.CppHeader(contents, argType='string')
+    #lexer can only handle C++ style structs
+    contents = contents.replace('typedef struct', 'typedef')
 
+    #the lexer can only handle C++ style enums
+    s = 0
+    while True:
+        s = contents.find('typedef enum', s)
+        if s < 0: break
+        e = contents.find(';', s)
+        enum = contents[s:e]
+        name = re.findall('\w+', enum, re.MULTILINE)[-1]
+        contents = contents.replace(enum, enum.replace('typedef enum', 'enum %s'%name))
+        s = e
+
+    return CppHeaderParser.CppHeader(contents, argType='string')
+
+########################################################################
+## Utilities for working with comments
+########################################################################
 def extractCommentBlock(lines, lastLine):
-    out = list()
     while True:
         line = lines[lastLine]
         if not line.startswith('//'): break
-        out.insert(0, line[2:])
+        yield line[2:]
         lastLine -= 1
-    return out
 
-print dir(header)
-#print header.typedefs
-#print header.enums
-for func in header.functions:
-    if 'iirdes_dzpk2sosf' == func['name']:
-        print func.keys()
-        print '\n'.join(extractCommentBlock(contents.splitlines(), func['line_number']-2))
+########################################################################
+## Invoke the generator
+########################################################################
+from mako.template import Template
+
+class AttributeDict(dict):
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+
+def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
+    keys = list()
+    if dataKey in blockData:
+        data = blockData[dataKey]
+        try: keys.extend(data) #could be a list
+        except: keys.append(data)
+    elif myFilter is not None:
+        for key, data in blockFunctions.items():
+            if not myFilter(key): continue
+            keys.append(key)
+
+    results = list()
+    for key in keys:
+        data = blockFunctions[key]
+        params = [AttributeDict(name=param['name'], type=param['type']) for param in data['parameters']]
+        if dataKey != 'constructor': params = params[1:] #strip object for function calls
+        paramTypesStr = ', '.join(['%s %s'%(param.type, param.name) for param in params])
+        paramArgsStr = ', '.join([param.name for param in params])
+        results.append(AttributeDict(key=key, name=data['name'], data=data,
+            params=params, paramArgsStr=paramArgsStr, paramTypesStr=paramTypesStr))
+    return results
+
+def extractPorts(dataKey, prefix, blockData, blockFunctions):
+    ports = list()
+    for key, data in blockData[dataKey].items():
+        key = str(key)
+        param = data['param']
+        fcnKey, argIdx = param.split('@')
+        argIdx = int(argIdx)
+        param = blockFunctions[fcnKey]['parameters'][argIdx]
+        type = param['type']
+        if param['pointer']: type = type.replace('*', '').strip()
+        alias = None if 'alias' not in data else data['alias']
+        ports.append(AttributeDict(key=key, name=prefix+key, type=type, alias=alias))
+
+    return ports
+
+def generateCpp(blockName, blockData, headerData, contentsLines):
+
+    blockFunctions = dict()
+    for func in headerData.functions:
+        if not func['name'].startswith(blockName+'_'): continue
+        blockFunctions[func['name'].replace(blockName+'_', '')] = func
+
+    constructor = extractFunctionData('constructor', blockData, lambda x: x == 'create', blockFunctions)[0]
+    destructor = extractFunctionData('destructor', blockData, lambda x: x == 'destroy', blockFunctions)[0]
+    initializers = extractFunctionData('initializers', blockData, None, blockFunctions)
+    setters = extractFunctionData('setters', blockData, lambda x: x.startswith('set_'), blockFunctions)
+    activators = extractFunctionData('activators', blockData, lambda x: x == 'reset', blockFunctions)
+    inputs = extractPorts('inputs', '_input', blockData, blockFunctions)
+    outputs = extractPorts('outputs', '_output', blockData, blockFunctions)
+
+    #santy checks
+    assert(constructor)
+    assert(destructor)
+    assert(inputs)
+    assert(outputs)
+
+    tmpl_cpp = os.path.join(os.path.dirname(__file__), 'LiquidBlocks.tmpl.cpp')
+    return Template(open(tmpl_cpp).read()).render(
+        blockClass = blockName+'Block',
+        blockName = blockName,
+        constructor = constructor,
+        destructor = destructor,
+        initializers = initializers,
+        activators = activators,
+        setters = setters,
+        inputs = inputs,
+        outputs = outputs,
+    )
+
+########################################################################
+## Generator entry point
+########################################################################
+import sys
+import yaml
+
+if __name__ == '__main__':
+    liquidH = sys.argv[1]
+    blocksYaml = sys.argv[2]
+    outputCpp = sys.argv[3]
+
+    #parse the header
+    contentsH = open(liquidH).read()
+    contentsLines = contentsH.splitlines()
+    headerData = parseHeader(contentsH)
+
+    #parse the blocks
+    blocksData = yaml.load(open(blocksYaml).read())
+
+    #run the generator
+    output = ""
+    for blockName, blockData in blocksData.items():
+        output += generateCpp(blockName, blockData, headerData, contentsLines)
+    open(outputCpp, 'w').write(output)

@@ -19,15 +19,52 @@ message(STATUS "LIQUIDDSP_INCLUDE_DIRS: ${LIQUIDDSP_INCLUDE_DIRS}")
 message(STATUS "LIQUIDDSP_LIBRARIES: ${LIQUIDDSP_LIBRARIES}")
 
 ########################################################################
+# Find the python interpreter
+########################################################################
+find_package(PythonInterp)
+if (NOT ${PYTHONINTERP_FOUND})
+    message(FATAL_ERROR "Cant find PYTHON_EXECUTABLE")
+endif()
+
+message(STATUS "PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
+
+########################################################################
+# Preprocess the header
+########################################################################
+set(LIQUID_H_SOURCE "${LIQUIDDSP_INCLUDE_DIRS}/liquid/liquid.h")
+set(LIQUID_H_PROCESSED "${CMAKE_BINARY_DIR}/liquid.h")
+add_custom_command(
+    OUTPUT "${LIQUID_H_PROCESSED}"
+    DEPENDS "${LIQUID_H_SOURCE}"
+    COMMAND ${CMAKE_CXX_COMPILER} -E -C "${LIQUID_H_SOURCE}" > "${LIQUID_H_PROCESSED}")
+
+########################################################################
+# build rules for the blocks
+########################################################################
+set(LIQUID_BLOCKS_GEN_PY "${PROJECT_SOURCE_DIR}/LiquidBlocksGen.py")
+file(GLOB BLOCKS_YAML "${PROJECT_SOURCE_DIR}/blocks/*.yaml")
+foreach(block_yaml ${BLOCKS_YAML})
+    get_filename_component(name "${block_yaml}" NAME_WE)
+    set(OUTPUT_FILE "${CMAKE_BINARY_DIR}/${name}.cpp")
+    add_custom_command(
+        OUTPUT "${OUTPUT_FILE}"
+        DEPENDS "${LIQUID_H_PROCESSED}"
+        DEPENDS "${LIQUID_BLOCKS_GEN_PY}"
+        DEPENDS "${PROJECT_SOURCE_DIR}/LiquidBlocks.tmpl.cpp"
+        DEPENDS "${block_yaml}"
+        COMMAND ${PYTHON_EXECUTABLE} "${LIQUID_BLOCKS_GEN_PY}" "${LIQUID_H_PROCESSED}" "${block_yaml}" "${OUTPUT_FILE}")
+    list(APPEND BLOCK_SOURCES "${OUTPUT_FILE}")
+endforeach(block_yaml)
+
+########################################################################
 # Build the module
 ########################################################################
 include_directories(${LIQUIDDSP_INCLUDE_DIRS})
 
 POTHOS_MODULE_UTIL(
     TARGET LiquidBlocks
-    SOURCES
-        FOO
+    SOURCES ${BLOCK_SOURCES}
     DESTINATION liquid
     LIBRARIES ${LIQUIDDSP_LIBRARIES}
-    ENABLE_DOCS
+    #ENABLE_DOCS
 )
