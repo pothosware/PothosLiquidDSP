@@ -26,20 +26,17 @@ public:
     {
         _q = ${constructor.name}(${constructor.paramArgsStr});
 
-        //setup input ports
-        % for input in inputs:
-        ${input.name} = this->setupInput("${input.key}", typeid(${input.type}));
-        % if input.alias is not None:
-        ${input.name}->setAlias("${input.alias}");
+        //setup ports
+        % for setupFcn, ports in [('setupInput', inputs), ('setupOutput', outputs)]:
+        % for port in ports:
+        ${port.portVar} = this->${setupFcn}("${port.key}", typeid(${port.type}));
+        % if port.alias is not None:
+        ${port.portVar}->setAlias("${port.alias}");
+        % endif
+        % if port.reserve is not None:
+        ${port.portVar}->setReserve(${port.reserve});
         % endif
         % endfor
-
-        //setup output ports
-        % for output in outputs:
-        ${output.name} = this->setupOutput("${output.key}", typeid(${output.type}));
-        % if output.alias is not None:
-        ${output.name}->setAlias("${output.alias}");
-        % endif
         % endfor
 
         //register calls on this block
@@ -72,7 +69,36 @@ public:
 
     void work(void)
     {
-        
+        //get pointers to port buffers
+        % for port in inputs + outputs:
+        auto ${port.buffVar} = ${port.portVar}->buffer().as<${port.type} *>();
+        % endfor
+
+        //calculate available input
+        const size_t numIn = this->workInfo().minInElements;
+        const size_t numOut = this->workInfo().minOutElements;
+        size_t N = std::min(numIn/${worker.decim}, numOut/${worker.interp});
+        if (N == 0) return;
+
+        //perform work on buffers
+        % if worker.loop:
+        for (size_t i = 0; i < N; i++)
+        {
+            ${worker.fcnName}(_q, ${worker.buffsStr});
+            % for factor, ports in [(worker.decim, inputs), (worker.interp, outputs)]:
+            % for port in ports:
+            ${port.buffVar} += ${factor};
+            % endfor
+            % endfor
+        }
+        % endif
+
+        //produce and consume resources
+        % for method, factor, ports in [('consume', worker.decim, inputs), ('produce', worker.interp, outputs)]:
+        % for port in ports:
+        ${port.portVar}->${method}(N*${factor});
+        % endfor
+        % endfor
     }
 
 private:
@@ -84,11 +110,11 @@ private:
     ${constructor.data['rtnType']} _q;
 
     % for input in inputs:
-    Pothos::InputPort *${input.name};
+    Pothos::InputPort *${input.portVar};
     % endfor
 
     % for output in outputs:
-    Pothos::OutputPort *${output.name};
+    Pothos::OutputPort *${output.portVar};
     % endfor
 };
 

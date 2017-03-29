@@ -40,10 +40,8 @@ def extractCommentBlock(lines, lastLine):
         lastLine -= 1
 
 ########################################################################
-## Invoke the generator
+## Utilities for attribute extraction
 ########################################################################
-from mako.template import Template
-
 class AttributeDict(dict):
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
@@ -66,8 +64,13 @@ def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
         if dataKey != 'constructor': params = params[1:] #strip object for function calls
         paramTypesStr = ', '.join(['%s %s'%(param.type, param.name) for param in params])
         paramArgsStr = ', '.join([param.name for param in params])
-        results.append(AttributeDict(key=key, name=data['name'], data=data,
-            params=params, paramArgsStr=paramArgsStr, paramTypesStr=paramTypesStr))
+        results.append(AttributeDict(
+            key=key,
+            name=data['name'],
+            data=data,
+            params=params,
+            paramArgsStr=paramArgsStr,
+            paramTypesStr=paramTypesStr))
     return results
 
 def extractPorts(dataKey, prefix, blockData, blockFunctions):
@@ -75,15 +78,53 @@ def extractPorts(dataKey, prefix, blockData, blockFunctions):
     for key, data in blockData[dataKey].items():
         key = str(key)
         param = data['param']
-        fcnKey, argIdx = param.split('@')
+        fcnKey, argIdx = param.split(':')
         argIdx = int(argIdx)
         param = blockFunctions[fcnKey]['parameters'][argIdx]
         type = param['type']
         if param['pointer']: type = type.replace('*', '').strip()
+        buffVar = prefix+key+'Buff'
+        buffPass = buffVar if param['pointer'] else '*'+buffVar
         alias = None if 'alias' not in data else data['alias']
-        ports.append(AttributeDict(key=key, name=prefix+key, type=type, alias=alias))
-
+        reserve = None if 'reserve' not in data else data['reserve']
+        ports.append(AttributeDict(
+            key=key,
+            portVar='_'+prefix+key,
+            buffVar=buffVar,
+            buffPass=buffPass,
+            type=type,
+            alias=alias,
+            reserve=reserve,
+            fcnKey=fcnKey,
+            argIdx=argIdx))
     return ports
+
+def extractWorker(blockData, blockFunctions, inputs, outputs):
+    workData = blockData['work']
+    fcnKey = workData['function']
+    params = list()
+    fcnData = blockFunctions[fcnKey]
+    for argIdx, param in enumerate(fcnData['parameters']):
+        if argIdx == 0: continue #skip object
+        matches = [port for port in inputs + outputs if port.fcnKey == fcnKey and argIdx == port.argIdx]
+        if len(matches) != 1: raise Exception('Cant find port match for %s[%d]'%(fcnKey, argIdx))
+        params.append(matches[0])
+    buffsStr = ', '.join([param.buffPass for param in params])
+    return AttributeDict(
+        fcnKey=fcnKey,
+        fcnName=fcnData['name'],
+        fcnData=fcnData,
+        params=params,
+        buffsStr=buffsStr,
+        workData=workData,
+        loop=workData.get('loop', False),
+        decim=workData.get('decim', 1),
+        interp=workData.get('interp', 1))
+
+########################################################################
+## Invoke the generator
+########################################################################
+from mako.template import Template
 
 def generateCpp(blockName, blockData, headerData, contentsLines):
 
@@ -97,14 +138,17 @@ def generateCpp(blockName, blockData, headerData, contentsLines):
     initializers = extractFunctionData('initializers', blockData, None, blockFunctions)
     setters = extractFunctionData('setters', blockData, lambda x: x.startswith('set_'), blockFunctions)
     activators = extractFunctionData('activators', blockData, lambda x: x == 'reset', blockFunctions)
-    inputs = extractPorts('inputs', '_input', blockData, blockFunctions)
-    outputs = extractPorts('outputs', '_output', blockData, blockFunctions)
+    inputs = extractPorts('inputs', 'in', blockData, blockFunctions)
+    outputs = extractPorts('outputs', 'out', blockData, blockFunctions)
 
     #santy checks
     assert(constructor)
     assert(destructor)
     assert(inputs)
     assert(outputs)
+
+    #work extraction
+    worker = extractWorker(blockData, blockFunctions, inputs, outputs)
 
     tmpl_cpp = os.path.join(os.path.dirname(__file__), 'LiquidBlocks.tmpl.cpp')
     return Template(open(tmpl_cpp).read()).render(
@@ -117,6 +161,7 @@ def generateCpp(blockName, blockData, headerData, contentsLines):
         setters = setters,
         inputs = inputs,
         outputs = outputs,
+        worker = worker,
     )
 
 ########################################################################
