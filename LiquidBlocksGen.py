@@ -30,8 +30,12 @@ def parseHeader(contents):
     return CppHeaderParser.CppHeader(contents, argType='string')
 
 ########################################################################
-## Utilities for working with comments
+## Utilities for attribute extraction
 ########################################################################
+class AttributeDict(dict):
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+
 def extractCommentBlock(lines, lastLine):
     while True:
         line = lines[lastLine]
@@ -39,12 +43,14 @@ def extractCommentBlock(lines, lastLine):
         yield line[2:]
         lastLine -= 1
 
-########################################################################
-## Utilities for attribute extraction
-########################################################################
-class AttributeDict(dict):
-    __getattr__ = dict.__getitem__
-    __setattr__ = dict.__setitem__
+def extractBlockFunctions(blockName, headerData, commentLines):
+    blockFunctions = dict()
+    for func in headerData.functions:
+        if not func['name'].startswith(blockName+'_'): continue
+        func = AttributeDict([(k, v) for k, v in func.items()])
+        func.docs = list(extractCommentBlock(contentsLines, func['line_number']-2))
+        blockFunctions[func.name.replace(blockName+'_', '')] = func
+    return blockFunctions
 
 def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
     keys = list()
@@ -66,7 +72,8 @@ def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
         paramArgsStr = ', '.join([param.name for param in params])
         results.append(AttributeDict(
             key=key,
-            name=data['name'],
+            name=data.name,
+            docs=data.docs,
             data=data,
             params=params,
             paramArgsStr=paramArgsStr,
@@ -83,6 +90,9 @@ def extractPorts(dataKey, prefix, blockData, blockFunctions):
         param = blockFunctions[fcnKey]['parameters'][argIdx]
         type = param['type']
         if param['pointer']: type = type.replace('*', '').strip()
+        portType = type
+        if portType == 'liquid_float_complex': portType = 'std::complex<float>'
+        if portType == 'liquid_double_complex': portType = 'std::complex<double>'
         buffVar = prefix+key+'Buff'
         buffPass = buffVar if param['pointer'] else '*'+buffVar
         alias = None if 'alias' not in data else data['alias']
@@ -93,6 +103,7 @@ def extractPorts(dataKey, prefix, blockData, blockFunctions):
             buffVar=buffVar,
             buffPass=buffPass,
             type=type,
+            portType=portType,
             alias=alias,
             reserve=reserve,
             fcnKey=fcnKey,
@@ -125,14 +136,47 @@ def extractWorker(blockData, blockFunctions, inputs, outputs):
 ## Invoke the generator
 ########################################################################
 from mako.template import Template
+import json
+import re
+
+def generateBlockDesc(blockName, blockData, constructor, initializers, setters):
+    desc = dict()
+    desc['name'] = blockData['name']
+    desc['path'] = '/liquid/'+blockName
+    desc['args'] = [param['name'] for param in constructor.params]
+    desc['keywords'] = blockData.get('keywords', [])
+    desc['categories'] = blockData.get('categories', [])
+    desc['categories'].append('/Liquid DSP')
+
+    desc['calls'] = list()
+    for type, functions in [('initializer', initializers), ('setter', setters)]:
+        for function in functions: desc['calls'].append(dict(
+            type=type,
+            name=function.key,
+            args=[param.name for param in function.params]))
+
+    #param documentation mapping
+    paramDocs = dict()
+    for function in [constructor] + initializers + setters:
+        for docline in function.docs:
+            match = re.match('^\s*(\w+)\s*:\s*(.*)\s*$', docline)
+            if match: paramDocs[match.groups()[0]] = [match.groups()[1]]
+
+    desc['params'] = list()
+    for function in [constructor] + initializers + setters:
+        for param in function.params:
+            key = param.name
+            desc['params'].append(dict(
+                key=key,
+                name=key.upper().replace('_', ' ').strip(),
+                default=str(blockData.get('defaults', {}).get(key, '')),
+                desc=paramDocs.get(key, [])))
+
+    return json.dumps(desc)
 
 def generateCpp(blockName, blockData, headerData, contentsLines):
 
-    blockFunctions = dict()
-    for func in headerData.functions:
-        if not func['name'].startswith(blockName+'_'): continue
-        blockFunctions[func['name'].replace(blockName+'_', '')] = func
-
+    blockFunctions = extractBlockFunctions(blockName, headerData, contentsLines)
     constructor = extractFunctionData('constructor', blockData, lambda x: x == 'create', blockFunctions)[0]
     destructor = extractFunctionData('destructor', blockData, lambda x: x == 'destroy', blockFunctions)[0]
     initializers = extractFunctionData('initializers', blockData, None, blockFunctions)
@@ -150,8 +194,12 @@ def generateCpp(blockName, blockData, headerData, contentsLines):
     #work extraction
     worker = extractWorker(blockData, blockFunctions, inputs, outputs)
 
-    tmpl_cpp = os.path.join(os.path.dirname(__file__), 'LiquidBlocks.tmpl.cpp')
-    return Template(open(tmpl_cpp).read()).render(
+    #block desc
+    blockDesc = generateBlockDesc(blockName, blockData, constructor, initializers, setters)
+    blockDescEscaped = ''.join([hex(ord(ch)).replace('0x', '\\x') for ch in blockDesc])
+
+    tmplCpp = os.path.join(os.path.dirname(__file__), 'LiquidBlocks.tmpl.cpp')
+    return Template(open(tmplCpp).read()).render(
         blockClass = blockName+'Block',
         blockName = blockName,
         constructor = constructor,
@@ -162,6 +210,7 @@ def generateCpp(blockName, blockData, headerData, contentsLines):
         inputs = inputs,
         outputs = outputs,
         worker = worker,
+        blockDescEscaped = blockDescEscaped,
     )
 
 ########################################################################

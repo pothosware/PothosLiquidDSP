@@ -36,7 +36,11 @@ set(LIQUID_H_PROCESSED "${CMAKE_BINARY_DIR}/liquid.h")
 add_custom_command(
     OUTPUT "${LIQUID_H_PROCESSED}"
     DEPENDS "${LIQUID_H_SOURCE}"
-    COMMAND ${CMAKE_CXX_COMPILER} -E -C "${LIQUID_H_SOURCE}" > "${LIQUID_H_PROCESSED}")
+    COMMAND ${CMAKE_CXX_COMPILER}
+        -E #preprocessor
+        -C #leave comments
+        -P #no line markers
+        "${LIQUID_H_SOURCE}" > "${LIQUID_H_PROCESSED}")
 
 ########################################################################
 # build rules for the blocks

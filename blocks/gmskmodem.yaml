@@ -1,5 +1,9 @@
 gmskmod:
     name: GMSK Mod
+    defaults:
+        _k: 4
+        _m: 3
+        _BT: 0.3
     inputs:
         sym:
             param: modulate:1
@@ -14,6 +18,11 @@ gmskmod:
 
 gmskdem:
     name: GMSK Demod
+    defaults:
+        _k: 4
+        _m: 3
+        _BT: 0.3
+        _bw: 0.01
     inputs:
         0:
             param: demodulate:1

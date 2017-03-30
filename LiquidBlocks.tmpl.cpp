@@ -8,6 +8,8 @@ import datetime
 
 #include <Pothos/Framework.hpp>
 #include <liquid/liquid.h>
+#include <complex>
+#include <iostream>
 
 class ${blockClass} : public Pothos::Block
 {
@@ -29,7 +31,7 @@ public:
         //setup ports
         % for setupFcn, ports in [('setupInput', inputs), ('setupOutput', outputs)]:
         % for port in ports:
-        ${port.portVar} = this->${setupFcn}("${port.key}", typeid(${port.type}));
+        ${port.portVar} = this->${setupFcn}("${port.key}", typeid(${port.portType}));
         % if port.alias is not None:
         ${port.portVar}->setAlias("${port.alias}");
         % endif
@@ -75,8 +77,8 @@ public:
         % endfor
 
         //calculate available input
-        const size_t numIn = this->workInfo().minInElements;
-        const size_t numOut = this->workInfo().minOutElements;
+        const size_t numIn = this->workInfo().minAllInElements;
+        const size_t numOut = this->workInfo().minAllOutElements;
         size_t N = std::min(numIn/${worker.decim}, numOut/${worker.interp});
         if (N == 0) return;
 
@@ -101,6 +103,16 @@ public:
         % endfor
     }
 
+    void propagateLabels(const Pothos::InputPort *input)
+    {
+        for (const auto &label : input->labels())
+        {
+            % for output in outputs:
+            ${output.portVar}->postLabel(label.toAdjusted(${worker.interp}, ${worker.decim}));
+            % endfor
+        }
+    }
+
 private:
     % for function in [constructor] + initializers + setters:
     % for param in function.params:
@@ -112,7 +124,6 @@ private:
     % for input in inputs:
     Pothos::InputPort *${input.portVar};
     % endfor
-
     % for output in outputs:
     Pothos::OutputPort *${output.portVar};
     % endfor
@@ -124,3 +135,9 @@ private:
 static Pothos::BlockRegistry register${blockClass}(
     "/liquid/${blockName}", &${blockClass}::make);
 
+#include <Pothos/Plugin.hpp>
+
+pothos_static_block(register${blockClass}Docs)
+{
+    Pothos::PluginRegistry::add("/blocks/docs/liquid/${blockName}", std::string("${blockDescEscaped}"));
+}
