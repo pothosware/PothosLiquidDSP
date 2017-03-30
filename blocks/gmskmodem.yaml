@@ -4,15 +4,13 @@ gmskmod:
         _k: 4
         _m: 3
         _BT: 0.3
-    inputs:
-        sym:
-            param: modulate:1
+    inputs: sym
     outputs:
-        0:
-            param: modulate:2
+        y:
             reserve: _m
     work:
         function: modulate
+        args: [sym, y]
         interp: _m
         loop: true
 
@@ -24,13 +22,11 @@ gmskdem:
         _BT: 0.3
         _bw: 0.01
     inputs:
-        0:
-            param: demodulate:1
+        x:
             reserve: _m
-    outputs:
-        sym:
-            param: demodulate:2
+    outputs: sym
     work:
         function: demodulate
+        args: [x, sym]
         decim: _m
         loop: true

@@ -24,6 +24,13 @@ public:
         % for param in constructor.params:
         ${param.name}(${param.name}),
         % endfor
+        % for function in initializers + setters:
+        % for param in function.params:
+        % if param.default is not None:
+        ${param.name}(${param.default}),
+        % endif
+        % endfor
+        % endfor
         _q(nullptr)
     {
         _q = ${constructor.name}(${constructor.paramArgsStr});
@@ -55,7 +62,7 @@ public:
     % for function in initializers + setters:
     void ${function.key}(${function.paramTypesStr})
     {
-        % for param in function.params:
+        % for param in function.externalParams:
         this->${param.name} = ${param.name};
         % endfor
         ${function.name}(_q, ${function.paramArgsStr});
@@ -86,13 +93,15 @@ public:
         % if worker.loop:
         for (size_t i = 0; i < N; i++)
         {
-            ${worker.fcnName}(_q, ${worker.buffsStr});
+            ${worker.fcnName}(_q, ${worker.funcArgs});
             % for factor, ports in [(worker.decim, inputs), (worker.interp, outputs)]:
             % for port in ports:
             ${port.buffVar} += ${factor};
             % endfor
             % endfor
         }
+        % else:
+        ${worker.fcnName}(_q, ${worker.funcArgs});
         % endif
 
         //produce and consume resources

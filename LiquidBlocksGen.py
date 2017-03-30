@@ -56,25 +56,33 @@ def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
     keys = list()
     if dataKey in blockData:
         data = blockData[dataKey]
-        try: keys.extend(data) #could be a list
-        except: keys.append(data)
+        if isinstance(data, str): keys.append(data)
+        if isinstance(data, list): keys.extend(data)
+        if isinstance(data, dict): keys.extend(data.keys())
     elif myFilter is not None:
         for key, data in blockFunctions.items():
             if not myFilter(key): continue
             keys.append(key)
 
+    defaultsData = blockData.get('defaults', {})
     results = list()
     for key in keys:
         data = blockFunctions[key]
-        params = [AttributeDict(name=param['name'], type=param['type']) for param in data['parameters']]
+        params = [AttributeDict(name=param['name'], type=param['type'], default=defaultsData.get(param['name'], None)) for param in data['parameters']]
         if dataKey != 'constructor': params = params[1:] #strip object for function calls
-        paramTypesStr = ', '.join(['%s %s'%(param.type, param.name) for param in params])
+        if dataKey == 'constructor' and len(params) == 1 and params[0].type == 'void': params = [] #skip foo(void)
+
+        internalParamsData = blockData.get('internalParams', {})
+        externalParams = [p for p in params if p.name not in internalParamsData]
+        paramTypesStr = ', '.join(['%s %s'%(param.type, param.name) for param in externalParams])
         paramArgsStr = ', '.join([param.name for param in params])
+
         results.append(AttributeDict(
             key=key,
             name=data.name,
             docs=data.docs,
             data=data,
+            externalParams=externalParams,
             params=params,
             paramArgsStr=paramArgsStr,
             paramTypesStr=paramTypesStr))
@@ -82,11 +90,15 @@ def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
 
 def extractPorts(dataKey, prefix, blockData, blockFunctions):
     ports = list()
-    for key, data in blockData[dataKey].items():
+    portData = blockData[dataKey]
+    workData = blockData['work']
+    workArgs = workData['args']
+    workFcn = workData['function']
+    if isinstance(portData, str): portData = {portData:{}}
+    for key, data in portData.items():
         key = str(key)
-        param = data['param']
-        fcnKey, argIdx = param.split(':')
-        argIdx = int(argIdx)
+        fcnKey = workFcn
+        argIdx = workArgs.index(key)+1
         param = blockFunctions[fcnKey]['parameters'][argIdx]
         type = param['type']
         if param['pointer']: type = type.replace('*', '').strip()
@@ -115,18 +127,18 @@ def extractWorker(blockData, blockFunctions, inputs, outputs):
     fcnKey = workData['function']
     params = list()
     fcnData = blockFunctions[fcnKey]
-    for argIdx, param in enumerate(fcnData['parameters']):
-        if argIdx == 0: continue #skip object
-        matches = [port for port in inputs + outputs if port.fcnKey == fcnKey and argIdx == port.argIdx]
-        if len(matches) != 1: raise Exception('Cant find port match for %s[%d]'%(fcnKey, argIdx))
-        params.append(matches[0])
-    buffsStr = ', '.join([param.buffPass for param in params])
+    funcArgs = list()
+    for arg in workData['args']:
+        matches = [port for port in inputs + outputs if port.key == arg]
+        if not matches: funcArgs.append(arg)
+        else: funcArgs.append(matches[0].buffPass)
+    funcArgs = ', '.join(funcArgs)
     return AttributeDict(
         fcnKey=fcnKey,
         fcnName=fcnData['name'],
         fcnData=fcnData,
         params=params,
-        buffsStr=buffsStr,
+        funcArgs=funcArgs,
         workData=workData,
         loop=workData.get('loop', False),
         decim=workData.get('decim', 1),
@@ -153,7 +165,7 @@ def generateBlockDesc(blockName, blockData, constructor, initializers, setters):
         for function in functions: desc['calls'].append(dict(
             type=type,
             name=function.key,
-            args=[param.name for param in function.params]))
+            args=[param.name for param in function.externalParams]))
 
     #param documentation mapping
     paramDocs = dict()
@@ -164,7 +176,7 @@ def generateBlockDesc(blockName, blockData, constructor, initializers, setters):
 
     desc['params'] = list()
     for function in [constructor] + initializers + setters:
-        for param in function.params:
+        for param in function.externalParams:
             key = param.name
             desc['params'].append(dict(
                 key=key,

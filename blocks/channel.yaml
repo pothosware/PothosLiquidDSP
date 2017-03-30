@@ -1,0 +1,25 @@
+channel_cccf:
+    name: Channel
+    defaults:
+        _noise_floor_dB: -60.0
+        _SNRdB: 30.0
+        _frequency: 0.00
+        _phase: 2.1
+        _sigma: 1.0
+        _fd: 0.1
+        _h: nullptr
+        _h_len: 5
+    internalParams:
+        - _h
+    initializers:
+        - add_awgn
+        - add_carrier_offset
+        #- add_multipath
+        - add_shadowing
+    inputs: x
+    outputs: y
+    work:
+        function: execute_block
+        args: [x, N, y]
+        loop: false
+        size: execute_block:2
