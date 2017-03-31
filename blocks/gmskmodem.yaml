@@ -9,10 +9,8 @@ gmskmod:
         y:
             reserve: _m
     work:
-        function: modulate
-        args: [sym, y]
+        calls: modulate(sym, y)
         interp: _m
-        loop: true
 
 gmskdem:
     name: GMSK Demod
@@ -26,7 +24,5 @@ gmskdem:
             reserve: _m
     outputs: sym
     work:
-        function: demodulate
-        args: [x, sym]
+        calls: demodulate(x, sym)
         decim: _m
-        loop: true

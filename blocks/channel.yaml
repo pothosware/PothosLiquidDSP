@@ -19,6 +19,4 @@ channel_cccf:
     inputs: x
     outputs: y
     work:
-        function: execute
-        args: [x, y]
-        loop: true
+        calls: execute(x, y)

@@ -84,23 +84,38 @@ def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
             paramTypesStr=paramTypesStr))
     return results
 
+def extractWorkCalls(blockData):
+    calls = list()
+    workCalls = blockData['work']['calls']
+    if isinstance(workCalls, str): workCalls = [workCalls]
+
+    for workCall in workCalls:
+        m = re.match('(\w+)\((.+)\)', workCall)
+        name = m.groups()[0]
+        args = m.groups()[1].split(',')
+        args = map(str.strip, args)
+        calls.append((name, args))
+
+    return calls
+
 def extractPorts(dataKey, prefix, blockData, blockFunctions):
     ports = list()
     portData = blockData[dataKey]
-    workData = blockData['work']
-    workArgs = workData['args']
-    workFcn = workData['function']
+    workCalls = extractWorkCalls(blockData)
     if isinstance(portData, str): portData = {portData:{}}
     for key, data in portData.items():
         key = str(key)
-        fcnKey = workFcn
-        argIdx = workArgs.index(key)+1
+        argIdx = None
+        for workFcn, workArgs in workCalls:
+            try:
+                argIdx = workArgs.index(key)+1
+                fcnKey = workFcn
+            except: pass
+        assert(argIdx is not None)
         param = blockFunctions[fcnKey]['parameters'][argIdx]
         type = param['type']
         if param['pointer']: type = type.replace('*', '').strip()
         portType = type
-        if portType == 'liquid_float_complex': portType = 'std::complex<float>'
-        if portType == 'liquid_double_complex': portType = 'std::complex<double>'
         buffVar = prefix+key+'Buff'
         buffPass = buffVar if param['pointer'] else '*'+buffVar
         alias = None if 'alias' not in data else data['alias']
@@ -120,23 +135,19 @@ def extractPorts(dataKey, prefix, blockData, blockFunctions):
 
 def extractWorker(blockData, blockFunctions, inputs, outputs):
     workData = blockData['work']
-    fcnKey = workData['function']
-    params = list()
-    fcnData = blockFunctions[fcnKey]
-    funcArgs = list()
-    for arg in workData['args']:
-        matches = [port for port in inputs + outputs if port.key == arg]
-        if not matches: funcArgs.append(arg)
-        else: funcArgs.append(matches[0].buffPass)
-    funcArgs = ', '.join(funcArgs)
+    workCalls = extractWorkCalls(blockData)
+    functions = list()
+    for workFcn, workArgs in workCalls:
+        fcnData = blockFunctions[workFcn]
+        funcArgs = list()
+        for arg in workArgs:
+            matches = [port for port in inputs + outputs if port.key == arg]
+            if not matches: funcArgs.append(arg)
+            else: funcArgs.append(matches[0].buffPass)
+        functions.append(AttributeDict(name=fcnData['name'], args=', '.join(funcArgs)))
     return AttributeDict(
-        fcnKey=fcnKey,
-        fcnName=fcnData['name'],
-        fcnData=fcnData,
-        params=params,
-        funcArgs=funcArgs,
-        workData=workData,
-        loop=workData.get('loop', False),
+        functions=functions,
+        loop=workData.get('loop', True),
         decim=workData.get('decim', 1),
         interp=workData.get('interp', 1))
 

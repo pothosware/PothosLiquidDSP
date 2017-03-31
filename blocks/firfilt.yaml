@@ -1,0 +1,12 @@
+firfilt_cccf:
+    name: FIR Filter
+    defaults:
+        _n: 11
+        _scale: 1
+    constructor: create_rect
+    inputs: x
+    outputs: y
+    work:
+        calls:
+            - push(x)
+            - execute(y)

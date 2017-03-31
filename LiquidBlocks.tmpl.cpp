@@ -7,8 +7,8 @@ import datetime
 ////////////////////////////////////////////////////////////////////////
 
 #include <Pothos/Framework.hpp>
+#include <complex> //need complex before liquid
 #include <liquid/liquid.h>
-#include <complex>
 #include <iostream>
 
 class ${blockClass} : public Pothos::Block
@@ -93,7 +93,9 @@ public:
         % if worker.loop:
         for (size_t i = 0; i < N; i++)
         {
-            ${worker.fcnName}(_q, ${worker.funcArgs});
+            % for function in worker.functions:
+            ${function.name}(_q, ${function.args});
+            % endfor
             % for factor, ports in [(worker.decim, inputs), (worker.interp, outputs)]:
             % for port in ports:
             ${port.buffVar} += ${factor};
@@ -101,7 +103,9 @@ public:
             % endfor
         }
         % else:
-        ${worker.fcnName}(_q, ${worker.funcArgs});
+        % for function in worker.functions:
+        ${function.name}(_q, ${function.args});
+        % endfor
         % endif
 
         //produce and consume resources
