@@ -8,18 +8,17 @@ channel_cccf:
         _sigma: 1.0
         _fd: 0.1
         _h: nullptr
-        _h_len: 5
+        _h_len: 0
     internalParams:
         - _h
-    initializers:
+    setters:
         - add_awgn
         - add_carrier_offset
-        #- add_multipath
+        - add_multipath
         - add_shadowing
     inputs: x
     outputs: y
     work:
-        function: execute_block
-        args: [x, N, y]
-        loop: false
-        size: execute_block:2
+        function: execute
+        args: [x, y]
+        loop: true

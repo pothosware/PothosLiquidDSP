@@ -38,7 +38,7 @@ add_custom_command(
     DEPENDS "${LIQUID_H_SOURCE}"
     COMMAND ${CMAKE_CXX_COMPILER}
         -E #preprocessor
-        -C #leave comments
+        -CC #leave comments
         -P #no line markers
         "${LIQUID_H_SOURCE}" > "${LIQUID_H_PROCESSED}")
 

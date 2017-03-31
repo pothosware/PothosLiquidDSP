@@ -13,6 +13,10 @@ def parseHeader(contents):
     #stop warning, lexer doesn't understand restrict
     contents = contents.replace('__restrict', '')
 
+    #the lexer will consume comments as doxygen
+    contents = contents.replace('//', '//!')
+    contents = contents.replace('/*', '/*!')
+
     #lexer can only handle C++ style structs
     contents = contents.replace('typedef struct', 'typedef')
 
@@ -36,19 +40,11 @@ class AttributeDict(dict):
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
 
-def extractCommentBlock(lines, lastLine):
-    while True:
-        line = lines[lastLine]
-        if not line.startswith('//'): break
-        yield line[2:]
-        lastLine -= 1
-
 def extractBlockFunctions(blockName, headerData, commentLines):
     blockFunctions = dict()
     for func in headerData.functions:
         if not func['name'].startswith(blockName+'_'): continue
         func = AttributeDict([(k, v) for k, v in func.items()])
-        func.docs = list(extractCommentBlock(contentsLines, func['line_number']-2))
         blockFunctions[func.name.replace(blockName+'_', '')] = func
     return blockFunctions
 
@@ -80,7 +76,7 @@ def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
         results.append(AttributeDict(
             key=key,
             name=data.name,
-            docs=data.docs,
+            docs=data.get('doxygen', ''),
             data=data,
             externalParams=externalParams,
             params=params,
@@ -170,19 +166,47 @@ def generateBlockDesc(blockName, blockData, constructor, initializers, setters):
     #param documentation mapping
     paramDocs = dict()
     for function in [constructor] + initializers + setters:
-        for docline in function.docs:
-            match = re.match('^\s*(\w+)\s*:\s*(.*)\s*$', docline)
-            if match: paramDocs[match.groups()[0]] = [match.groups()[1]]
+        for docline in function.docs.splitlines():
+            if '/*!' in docline:
+                for comment in docline.split('/*!'):
+                    match = re.match('^\s*(\w+)\s*:\s*(.*)\s*\*/', comment)
+                    if match: paramDocs[match.groups()[0]] = match.groups()[1]
+            elif '//!' in docline:
+                for comment in docline.split('//!'):
+                    match = re.match('^\s*(\w+)\s*:\s*(.*)\s*$', comment)
+                    if match: paramDocs[match.groups()[0]] = match.groups()[1]
+    #for key, data in paramDocs.items(): print key, data
 
     desc['params'] = list()
     for function in [constructor] + initializers + setters:
         for param in function.externalParams:
             key = param.name
-            desc['params'].append(dict(
+            name = key.replace('_', ' ').strip()
+            units = None
+
+            #remove db from units
+            if name.lower().endswith('db'):
+                name = name[:-2].strip()
+                units = 'dB'
+
+            #generate a displayable name
+            name = name.title() if len(name) > 3 else name.upper()
+
+            data = dict(
                 key=key,
-                name=key.upper().replace('_', ' ').strip(),
-                default=str(blockData.get('defaults', {}).get(key, '')),
-                desc=paramDocs.get(key, [])))
+                name=name,
+                default=str(blockData.get('defaults', {}).get(key, '')))
+
+            #apply units if set already
+            if units: data['units'] = units
+
+            #apply docs if found
+            if key in paramDocs:
+                data['desc'] = [paramDocs[key]]
+                match = re.match('.*\[(.*)\]', paramDocs[key])
+                if match: data['units'] = match.groups()[0]
+
+            desc['params'].append(data)
 
     return json.dumps(desc)
 
