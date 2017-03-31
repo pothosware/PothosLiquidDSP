@@ -1,16 +1,3 @@
-<%!
-import datetime
-%>
-
-////////////////////////////////////////////////////////////////////////
-// This file is machine generated ${str(datetime.datetime.today())}
-////////////////////////////////////////////////////////////////////////
-
-#include <Pothos/Framework.hpp>
-#include <complex> //need complex before liquid
-#include <liquid/liquid.h>
-#include <iostream>
-
 class ${blockClass} : public Pothos::Block
 {
 public:
@@ -141,16 +128,3 @@ private:
     Pothos::OutputPort *${output.portVar};
     % endfor
 };
-
-/***********************************************************************
- * registration
- **********************************************************************/
-static Pothos::BlockRegistry register${blockClass}(
-    "/liquid/${blockName}", &${blockClass}::make);
-
-#include <Pothos/Plugin.hpp>
-
-pothos_static_block(register${blockClass}Docs)
-{
-    Pothos::PluginRegistry::add("/blocks/docs/liquid/${blockName}", std::string("${blockDescEscaped}"));
-}

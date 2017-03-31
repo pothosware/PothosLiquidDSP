@@ -219,9 +219,9 @@ def generateBlockDesc(blockName, blockData, constructor, initializers, setters):
 
             desc['params'].append(data)
 
-    return json.dumps(desc)
+    return desc
 
-def generateCpp(blockName, blockData, headerData, contentsLines):
+def generateCpp1(blockName, blockData, headerData, contentsLines):
 
     blockFunctions = extractBlockFunctions(blockName, headerData, contentsLines)
     constructor = extractFunctionData('constructor', blockData, lambda x: x == 'create', blockFunctions)[0]
@@ -243,10 +243,10 @@ def generateCpp(blockName, blockData, headerData, contentsLines):
 
     #block desc
     blockDesc = generateBlockDesc(blockName, blockData, constructor, initializers, setters)
-    blockDescEscaped = ''.join([hex(ord(ch)).replace('0x', '\\x') for ch in blockDesc])
 
-    tmplCpp = os.path.join(os.path.dirname(__file__), 'LiquidBlocks.tmpl.cpp')
-    return Template(open(tmplCpp).read()).render(
+    #C++ class
+    blockClassTmplCpp = os.path.join(os.path.dirname(__file__), 'tmpl', 'LiquidBlockClass.tmpl.cpp')
+    tmplData = AttributeDict(
         blockClass = blockName+'Block',
         blockName = blockName,
         constructor = constructor,
@@ -256,9 +256,65 @@ def generateCpp(blockName, blockData, headerData, contentsLines):
         setters = setters,
         inputs = inputs,
         outputs = outputs,
-        worker = worker,
-        blockDescEscaped = blockDescEscaped,
-    )
+        worker = worker)
+    outCpp = Template(open(blockClassTmplCpp).read()).render(**tmplData)
+
+    return outCpp, blockDesc, tmplData
+
+def generateCpp(blockName, blockData, headerData, contentsLines):
+
+    subtypes = blockData.get('subtypes', [])
+    factoryArgs = list()
+    subtypesArgs = list()
+
+    #generate class for every subtype
+    blockClassesCpp = ""
+    if subtypes:
+        for subtype in subtypes:
+            outCpp, blockDesc, tmplData = generateCpp1(blockName + '_' + subtype, blockData, headerData, contentsLines)
+            blockClassesCpp += outCpp
+            constructor = tmplData.constructor
+            subtypeFactoryArgs = ['o%d.convert<%s>()'%(i, p.type) for i, p in enumerate(constructor.externalParams)]
+            subtypeFactoryArgs = ', '.join(subtypeFactoryArgs)
+            subfactory = tmplData.blockClass
+            subtypesArgs.append((subtype, subfactory, subtypeFactoryArgs))
+
+        factory = 'make'+blockName+'Block'
+        factoryArgs = ['const std::string &type'] + ['const Pothos::Object &o%d'%i for i in range(len(blockDesc['args']))]
+        factoryArgs = ', '.join(factoryArgs)
+
+        #add subtypes to blockDesc
+        typeParam = dict(
+            name = 'Type',
+            key = 'type',
+            desc = ['Select block data types'],
+            preview = 'disable',
+            options = [dict(name=s.upper(), value='"%s"'%s) for s in subtypes])
+        blockDesc['params'].insert(0, typeParam)
+        blockDesc['args'].insert(0, 'type')
+        blockDesc['path'] = '/liquid/'+blockName
+
+    #or just the single block entry
+    else:
+        outCpp, blockDesc, tmplData = generateCpp1(blockName, blockData, headerData, contentsLines)
+        factory = tmplData.blockClass+'::make'
+        blockClassesCpp += outCpp
+
+    #encode the block description into escaped JSON
+    blockDescEscaped = ''.join([hex(ord(ch)).replace('0x', '\\x') for ch in json.dumps(blockDesc)])
+
+    #complete C++ source
+    registrationTmplCpp = os.path.join(os.path.dirname(__file__), 'tmpl', 'LiquidRegistration.tmpl.cpp')
+    outCpp = Template(open(registrationTmplCpp).read()).render(
+        blockClass = blockName+'Block',
+        blockName = blockName,
+        factory = factory,
+        factoryArgs = factoryArgs,
+        subtypesArgs = subtypesArgs,
+        blockClasses = blockClassesCpp,
+        blockDescEscaped = blockDescEscaped)
+
+    return outCpp
 
 ########################################################################
 ## Generator entry point

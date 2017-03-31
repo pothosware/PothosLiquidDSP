@@ -1,5 +1,9 @@
-firfilt_cccf:
+firfilt:
     name: FIR Filter
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
     defaults:
         _n: 11
         _scale: 1
