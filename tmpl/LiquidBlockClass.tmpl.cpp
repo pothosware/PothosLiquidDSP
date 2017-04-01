@@ -13,7 +13,7 @@ public:
         % endfor
         % for function in initializers + setters:
         % for param in function.params:
-        % if param.default is not None:
+        % if param not in constructor.params and param.default is not None:
         ${param.name}(${param.default}),
         % endif
         % endfor
@@ -36,8 +36,13 @@ public:
         % endfor
 
         //register calls on this block
-        % for function in initializers + setters:
+        % for function in initializers + setters + getters:
         this->registerCall(this, "${function.key}", &${blockClass}::${function.key});
+        % endfor
+
+        //register probes on this block
+        % for function in getters:
+        this->registerProbe("${function.key}", "probe_${function.key}", "${function.key}_triggered");
         % endfor
     }
 
@@ -56,6 +61,13 @@ public:
     }
     % endfor
 
+    % for function in getters:
+    ${function.rtnType} ${function.key}(void)
+    {
+        return ${function.name}(_q);
+    }
+    % endfor
+
     void activate(void)
     {
         % for activator in activators:
@@ -71,14 +83,16 @@ public:
         % endfor
 
         //calculate available input
-        const size_t numIn = this->workInfo().minAllInElements;
-        const size_t numOut = this->workInfo().minAllOutElements;
-        size_t N = std::min(numIn/${worker.decim}, numOut/${worker.interp});
-        if (N == 0) return;
+        const unsigned int numAvailableIn = this->workInfo().minAllInElements;
+        const unsigned int numAvailableOut = this->workInfo().minAllOutElements;
+        unsigned int numRead(0);
+        unsigned int numWritten(0);
 
         //perform work on buffers
-        % if worker.loop:
-        for (size_t i = 0; i < N; i++)
+        % if worker.mode == 'STANDARD_LOOP':
+        unsigned int N = std::min(numAvailableIn/${worker.decim}, numAvailableOut/${worker.interp});
+        if (N == 0) return;
+        for (unsigned int i = 0; i < N; i++)
         {
             % for function in worker.functions:
             ${function.name}(_q, ${function.args});
@@ -89,17 +103,33 @@ public:
             % endfor
             % endfor
         }
-        % else:
+        numRead = N*${worker.decim};
+        numWritten = N*${worker.interp};
+
+        % elif worker.mode == 'VARIABLE_OUTPUT_BLOCK':
+        unsigned int N = std::min(numAvailableIn, static_cast<unsigned int>(numAvailableOut/${worker.factor}));
+        if (N == 0) return;
         % for function in worker.functions:
         ${function.name}(_q, ${function.args});
         % endfor
+        numRead = N;
+
+        % elif worker.mode == 'STANDARD_BLOCK':
+        unsigned int N = std::min(numAvailableIn/${worker.decim}, numAvailableOut/${worker.interp});
+        if (N == 0) return;
+        % for function in worker.functions:
+        ${function.name}(_q, ${function.args});
+        % endfor
+        numRead = N*${worker.decim};
+        numWritten = N*${worker.interp};
         % endif
 
         //produce and consume resources
-        % for method, factor, ports in [('consume', worker.decim, inputs), ('produce', worker.interp, outputs)]:
-        % for port in ports:
-        ${port.portVar}->${method}(N*${factor});
+        % for port in inputs:
+        ${port.portVar}->consume(numRead);
         % endfor
+        % for port in outputs:
+        ${port.portVar}->produce(numWritten);
         % endfor
     }
 
@@ -114,12 +144,17 @@ public:
     }
 
 private:
-    % for function in [constructor] + initializers + setters:
-    % for param in function.params:
+    % for param in constructor.params:
     ${param.type} ${param.name};
     % endfor
+    % for function in initializers + setters:
+    % for param in function.params:
+    % if param not in constructor.params:
+    ${param.type} ${param.name};
+    % endif
     % endfor
-    ${constructor.data['rtnType']} _q;
+    % endfor
+    ${constructor.rtnType} _q;
 
     % for input in inputs:
     Pothos::InputPort *${input.portVar};

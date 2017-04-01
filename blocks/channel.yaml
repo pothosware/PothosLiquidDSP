@@ -21,4 +21,5 @@ channel:
     inputs: x
     outputs: y
     work:
-        calls: execute(x, y)
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK

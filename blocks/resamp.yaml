@@ -1,0 +1,24 @@
+resamp:
+    name: Arbitrary Resampler
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    defaults:
+        _rate: 1.1
+        _m: 7
+        _fc: 0.25
+        _As: 60.0
+        _npfb: 64
+    inputs: x
+    outputs:
+        y:
+            #round up to the nearest integer ratio
+            #used for the unique production pattern
+            reserve: int(_rate+1.0)
+    work:
+        calls: execute_block(x, N, y, &numWritten)
+        mode: VARIABLE_OUTPUT_BLOCK
+        factor: _rate
+
+#TODO more resamps

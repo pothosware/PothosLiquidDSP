@@ -1,16 +1,39 @@
-firfilt:
-    name: FIR Filter
+firfilt_kaiser:
+    name: FIR Filter Kaiser
+    key: firfilt
     subtypes:
         - rrrf
         - crcf
         - cccf
     defaults:
-        _n: 11
+        _n: 240
+        _fc: 0.1
+        _As: 60.0
+        _mu: 0.0
+        _scale: 1
+    constructor: create_kaiser
+    inputs: x
+    outputs: y
+    work:
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK
+
+firfilt_rect:
+    name: FIR Filter Rect
+    key: firfilt
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    defaults:
+        _n: 240
         _scale: 1
     constructor: create_rect
     inputs: x
     outputs: y
     work:
-        calls:
-            - push(x)
-            - execute(y)
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK
+
+#TODO firfilt_rnyquist
+#_type should be an enum in the liquid.h

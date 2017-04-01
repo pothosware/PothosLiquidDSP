@@ -1,0 +1,17 @@
+agc:
+    name: AGC
+    subtypes:
+        - crcf
+        - rrrf
+    defaults:
+        _bt: 0.01
+        _signal_level: 1.0
+        _rssi: 0.0
+        _gain: 1.0
+    inputs: x
+    outputs: y
+    work:
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK
+
+#TODO more agcs

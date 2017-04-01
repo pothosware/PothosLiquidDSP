@@ -78,6 +78,7 @@ def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
             name=data.name,
             docs=data.get('doxygen', ''),
             data=data,
+            rtnType=data.rtnType,
             externalParams=externalParams,
             params=params,
             paramArgsStr=paramArgsStr,
@@ -147,7 +148,8 @@ def extractWorker(blockData, blockFunctions, inputs, outputs):
         functions.append(AttributeDict(name=fcnData['name'], args=', '.join(funcArgs)))
     return AttributeDict(
         functions=functions,
-        loop=workData.get('loop', True),
+        mode=workData.get('mode', 'STANDARD_LOOP'),
+        factor=workData.get('factor', 1),
         decim=workData.get('decim', 1),
         interp=workData.get('interp', 1))
 
@@ -191,6 +193,10 @@ def generateBlockDesc(blockName, blockData, constructor, initializers, setters):
     desc['params'] = list()
     for function in [constructor] + initializers + setters:
         for param in function.externalParams:
+
+            #skip duplicates also found in the constructor
+            if function != constructor and param in constructor.externalParams: continue
+
             key = param.name
             name = key.replace('_', ' ').strip()
             units = None
@@ -221,13 +227,14 @@ def generateBlockDesc(blockName, blockData, constructor, initializers, setters):
 
     return desc
 
-def generateCpp1(blockName, blockData, headerData, contentsLines):
+def generateCpp1(blockKey, blockName, blockData, headerData, contentsLines):
 
-    blockFunctions = extractBlockFunctions(blockName, headerData, contentsLines)
+    blockFunctions = extractBlockFunctions(blockKey, headerData, contentsLines)
     constructor = extractFunctionData('constructor', blockData, lambda x: x == 'create', blockFunctions)[0]
     destructor = extractFunctionData('destructor', blockData, lambda x: x == 'destroy', blockFunctions)[0]
     initializers = extractFunctionData('initializers', blockData, None, blockFunctions)
     setters = extractFunctionData('setters', blockData, lambda x: x.startswith('set_'), blockFunctions)
+    getters = extractFunctionData('getters', blockData, lambda x: x.startswith('get_'), blockFunctions)
     activators = extractFunctionData('activators', blockData, lambda x: x == 'reset', blockFunctions)
     inputs = extractPorts('inputs', 'in', blockData, blockFunctions)
     outputs = extractPorts('outputs', 'out', blockData, blockFunctions)
@@ -254,6 +261,7 @@ def generateCpp1(blockName, blockData, headerData, contentsLines):
         initializers = initializers,
         activators = activators,
         setters = setters,
+        getters = getters,
         inputs = inputs,
         outputs = outputs,
         worker = worker)
@@ -263,6 +271,7 @@ def generateCpp1(blockName, blockData, headerData, contentsLines):
 
 def generateCpp(blockName, blockData, headerData, contentsLines):
 
+    blockKey = blockData.get('key', blockName)
     subtypes = blockData.get('subtypes', [])
     factoryArgs = list()
     subtypesArgs = list()
@@ -271,7 +280,7 @@ def generateCpp(blockName, blockData, headerData, contentsLines):
     blockClassesCpp = ""
     if subtypes:
         for subtype in subtypes:
-            outCpp, blockDesc, tmplData = generateCpp1(blockName + '_' + subtype, blockData, headerData, contentsLines)
+            outCpp, blockDesc, tmplData = generateCpp1(blockKey + '_' + subtype, blockName + '_' + subtype, blockData, headerData, contentsLines)
             blockClassesCpp += outCpp
             constructor = tmplData.constructor
             subtypeFactoryArgs = ['o%d.convert<%s>()'%(i, p.type) for i, p in enumerate(constructor.externalParams)]
@@ -296,7 +305,7 @@ def generateCpp(blockName, blockData, headerData, contentsLines):
 
     #or just the single block entry
     else:
-        outCpp, blockDesc, tmplData = generateCpp1(blockName, blockData, headerData, contentsLines)
+        outCpp, blockDesc, tmplData = generateCpp1(blockKey, blockName, blockData, headerData, contentsLines)
         factory = tmplData.blockClass+'::make'
         blockClassesCpp += outCpp
 

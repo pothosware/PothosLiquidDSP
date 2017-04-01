@@ -57,7 +57,7 @@ foreach(block_yaml ${BLOCKS_YAML})
         DEPENDS "${LIQUID_BLOCKS_GEN_PY}"
         DEPENDS "${BLOCKS_TMPL}"
         DEPENDS "${block_yaml}"
-        COMMAND ${PYTHON_EXECUTABLE} "${LIQUID_BLOCKS_GEN_PY}" "${LIQUID_H_PROCESSED}" "${block_yaml}" "${OUTPUT_FILE}")
+        COMMAND ${PYTHON_EXECUTABLE} -B "${LIQUID_BLOCKS_GEN_PY}" "${LIQUID_H_PROCESSED}" "${block_yaml}" "${OUTPUT_FILE}")
     list(APPEND BLOCK_SOURCES "${OUTPUT_FILE}")
 endforeach(block_yaml)
 
@@ -71,5 +71,4 @@ POTHOS_MODULE_UTIL(
     SOURCES ${BLOCK_SOURCES}
     DESTINATION liquid
     LIBRARIES ${LIQUIDDSP_LIBRARIES}
-    #ENABLE_DOCS
 )

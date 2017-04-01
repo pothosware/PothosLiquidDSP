@@ -11,6 +11,7 @@ gmskmod:
     work:
         calls: modulate(sym, y)
         interp: _m
+        mode: STANDARD_LOOP
 
 gmskdem:
     name: GMSK Demod
@@ -26,3 +27,4 @@ gmskdem:
     work:
         calls: demodulate(x, sym)
         decim: _m
+        mode: STANDARD_LOOP
