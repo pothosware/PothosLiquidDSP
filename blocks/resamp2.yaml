@@ -1,0 +1,106 @@
+resamp2_filter:
+    name: Half-band Filter
+    key: resamp2
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    defaults:
+        _m: 7
+        _f0: 0.0
+        _As: 60.0
+    inputs: x
+    outputs:
+        y0: {}
+        y1: {}
+    work:
+        calls: filter_execute(x, y0, y1)
+        mode: STANDARD_LOOP
+
+#TODO resamp2_analyzer and synth should be separate ports
+
+resamp2_analyzer:
+    name: Half-band Analyzer
+    key: resamp2
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    defaults:
+        _m: 7
+        _f0: 0.0
+        _As: 60.0
+    inputs:
+        x:
+            reserve: 2
+    outputs:
+        y:
+            reserve: 2
+    work:
+        calls: analyzer_execute(x, y)
+        mode: STANDARD_LOOP
+        decim: 2
+        interp: 2
+
+resamp2_synthesizer:
+    name: Half-band Synthesizer
+    key: resamp2
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    defaults:
+        _m: 7
+        _f0: 0.0
+        _As: 60.0
+    inputs:
+        x:
+            reserve: 2
+    outputs:
+        y:
+            reserve: 2
+    work:
+        calls: synthesizer_execute(x, y)
+        mode: STANDARD_LOOP
+        decim: 2
+        interp: 2
+
+resamp2_decimator:
+    name: Half-band Decimator
+    key: resamp2
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    defaults:
+        _m: 7
+        _f0: 0.0
+        _As: 60.0
+    inputs:
+        x:
+            reserve: 2
+    outputs: y
+    work:
+        calls: decim_execute(x, y)
+        mode: STANDARD_LOOP
+        decim: 2
+
+resamp2_interpolator:
+    name: Half-band Interpolator
+    key: resamp2
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    defaults:
+        _m: 7
+        _f0: 0.0
+        _As: 60.0
+    inputs: x
+    outputs:
+        y:
+            reserve: 2
+    work:
+        calls: decim_execute(x, y)
+        mode: STANDARD_LOOP
+        ionterp: 2
