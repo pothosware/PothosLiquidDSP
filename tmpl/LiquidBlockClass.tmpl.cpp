@@ -4,16 +4,12 @@ public:
 
     static Block *make(${constructor.paramTypesStr})
     {
-        return new ${blockClass}(${constructor.externalParamArgsStr});
+        return new ${blockClass}(${constructor.passArgsStr});
     }
 
     ${blockClass}(${constructor.paramTypesStr}):
         % for param in constructor.params:
-        % if param.name in constructor.internalParams:
         ${param.name}(${param.default}),
-        % else:
-        ${param.name}(${param.name}),
-        % endif
         % endfor
         % for function in initializers + setters:
         % for param in function.params:

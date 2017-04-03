@@ -9,10 +9,9 @@ channel:
         _phase: 2.1
         _sigma: 1.0
         _fd: 0.1
-        _h: nullptr
         _h_len: 0
-    internalParams:
-        - _h
+    internals:
+        _h: nullptr
     setters:
         - add_awgn
         - add_carrier_offset

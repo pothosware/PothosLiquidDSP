@@ -6,13 +6,12 @@ msresamp2_interpolator:
         - crcf
         - cccf
     defaults:
-        _type: LIQUID_RESAMP_INTERP
         _num_stages: 1
         _fc: 0.25
         _f0: 0.0
         _As: 60.0
-    internalParams:
-        - _type
+    internals:
+        _type: LIQUID_RESAMP_INTERP
     inputs: x
     outputs:
         y:
@@ -30,13 +29,12 @@ msresamp2_decimator:
         - crcf
         - cccf
     defaults:
-        _type: LIQUID_RESAMP_DECIM
         _num_stages: 1
         _fc: 0.25
         _f0: 0.0
         _As: 60.0
-    internalParams:
-        - _type
+    internals:
+        _type: LIQUID_RESAMP_DECIM
     inputs:
         x:
             reserve: (1 << _num_stages)
