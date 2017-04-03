@@ -1,0 +1,47 @@
+msresamp2_interpolator:
+    name: MS Half-band Interpolator
+    key: msresamp2
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    defaults:
+        _type: LIQUID_RESAMP_INTERP
+        _num_stages: 1
+        _fc: 0.25
+        _f0: 0.0
+        _As: 60.0
+    internalParams:
+        - _type
+    inputs: x
+    outputs:
+        y:
+            reserve: (1 << _num_stages)
+    work:
+        calls: execute(x, y)
+        mode: STANDARD_LOOP
+        interp: (1 << _num_stages)
+
+msresamp2_decimator:
+    name: MS Half-band Decimator
+    key: msresamp2
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    defaults:
+        _type: LIQUID_RESAMP_DECIM
+        _num_stages: 1
+        _fc: 0.25
+        _f0: 0.0
+        _As: 60.0
+    internalParams:
+        - _type
+    inputs:
+        x:
+            reserve: (1 << _num_stages)
+    outputs: y
+    work:
+        calls: execute(x, y)
+        mode: STANDARD_LOOP
+        decim: (1 << _num_stages)

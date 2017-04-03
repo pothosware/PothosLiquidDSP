@@ -71,6 +71,7 @@ def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
         internalParamsData = blockData.get('internalParams', {})
         externalParams = [p for p in params if p.name not in internalParamsData]
         paramTypesStr = ', '.join(['%s %s'%(param.type, param.name) for param in externalParams])
+        externalParamArgsStr = ', '.join([param.name for param in externalParams])
         paramArgsStr = ', '.join([param.name for param in params])
 
         results.append(AttributeDict(
@@ -80,8 +81,10 @@ def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
             data=data,
             rtnType=data.rtnType,
             externalParams=externalParams,
+            internalParams=internalParamsData,
             params=params,
             paramArgsStr=paramArgsStr,
+            externalParamArgsStr=externalParamArgsStr,
             paramTypesStr=paramTypesStr))
     return results
 
@@ -164,7 +167,7 @@ def generateBlockDesc(blockName, blockData, constructor, initializers, setters):
     desc = dict()
     desc['name'] = blockData['name']
     desc['path'] = '/liquid/'+blockName
-    desc['args'] = [param['name'] for param in constructor.params]
+    desc['args'] = [param['name'] for param in constructor.externalParams]
     desc['keywords'] = blockData.get('keywords', [])
     desc['categories'] = blockData.get('categories', [])
     desc['categories'].append('/Liquid DSP')

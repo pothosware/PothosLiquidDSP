@@ -10,6 +10,7 @@ resamp:
         _fc: 0.25
         _As: 60.0
         _npfb: 64
+        _tau: 0.0
     inputs: x
     outputs:
         y:
