@@ -1,0 +1,22 @@
+msresamp:
+    name: MS Resampler
+    key: msresamp
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    defaults:
+        _r: 1.1
+        _As: 60.0
+    internalParams:
+        - _type
+    inputs: x
+    outputs:
+        y:
+            #round up to the nearest integer ratio
+            #used for the unique production pattern
+            reserve: int(_r+1.0)
+    work:
+        calls: execute(x, N, y, &numWritten)
+        mode: VARIABLE_OUTPUT_BLOCK
+        factor: _r
