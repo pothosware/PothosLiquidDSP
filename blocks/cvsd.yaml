@@ -1,0 +1,31 @@
+cvsd_encode:
+    name: CVSD Encode
+    key: cvsd
+    defaults:
+        _num_bits: 4
+        _zeta: 1.5
+        _alpha: 0.9
+    inputs:
+        a:
+            reserve: 8
+    outputs: d
+    work:
+        calls: encode8(a, d)
+        mode: STANDARD_LOOP
+        decim: 8
+
+cvsd_decode:
+    name: CVSD Decode
+    key: cvsd
+    defaults:
+        _num_bits: 4
+        _zeta: 1.5
+        _alpha: 0.9
+    inputs: a
+    outputs:
+        d:
+            reserve: 8
+    work:
+        calls: decode8(d, a)
+        mode: STANDARD_LOOP
+        interp: 8
