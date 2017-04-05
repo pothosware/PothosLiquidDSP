@@ -257,7 +257,7 @@ def generateCpp1(blockKey, blockName, blockData, headerData, contentsLines):
     #C++ class
     blockClassTmplCpp = os.path.join(os.path.dirname(__file__), 'tmpl', 'LiquidBlockClass.tmpl.cpp')
     tmplData = AttributeDict(
-        blockClass = blockName+'Block',
+        blockClass = 'liquid_'+blockName+'_block',
         blockName = blockName,
         constructor = constructor,
         destructor = destructor,
@@ -291,7 +291,7 @@ def generateCpp(blockName, blockData, headerData, contentsLines):
             subfactory = tmplData.blockClass
             subtypesArgs.append((subtype, subfactory, subtypeFactoryArgs))
 
-        factory = 'make'+blockName+'Block'
+        factory = 'make_liquid_'+blockName+'_block'
         factoryArgs = ['const std::string &type'] + ['const Pothos::Object &o%d'%i for i in range(len(blockDesc['args']))]
         factoryArgs = ', '.join(factoryArgs)
 
@@ -318,7 +318,7 @@ def generateCpp(blockName, blockData, headerData, contentsLines):
     #complete C++ source
     registrationTmplCpp = os.path.join(os.path.dirname(__file__), 'tmpl', 'LiquidRegistration.tmpl.cpp')
     outCpp = Template(open(registrationTmplCpp).read()).render(
-        blockClass = blockName+'Block',
+        blockClass = 'liquid_'+blockName+'_block',
         blockName = blockName,
         factory = factory,
         factoryArgs = factoryArgs,
@@ -336,7 +336,7 @@ import yaml
 
 if __name__ == '__main__':
     liquidH = sys.argv[1]
-    blocksYaml = sys.argv[2]
+    resource = sys.argv[2]
     outputCpp = sys.argv[3]
 
     #parse the header
@@ -344,11 +344,18 @@ if __name__ == '__main__':
     contentsLines = contentsH.splitlines()
     headerData = parseHeader(contentsH)
 
-    #parse the blocks
-    blocksData = yaml.load(open(blocksYaml).read())
+    if resource == "ENUMS":
+        enumsTmplCpp = os.path.join(os.path.dirname(__file__), 'tmpl', 'LiquidEnums.tmpl.cpp')
+        output = Template(open(enumsTmplCpp).read()).render(enums=headerData.enums)
+        open(outputCpp, 'w').write(output)
 
-    #run the generator
-    output = ""
-    for blockName, blockData in blocksData.items():
-        output += generateCpp(blockName, blockData, headerData, contentsLines)
-    open(outputCpp, 'w').write(output)
+    else:
+
+        #parse the blocks
+        blocksData = yaml.load(open(resource).read())
+
+        #run the generator
+        output = ""
+        for blockName, blockData in blocksData.items():
+            output += generateCpp(blockName, blockData, headerData, contentsLines)
+        open(outputCpp, 'w').write(output)

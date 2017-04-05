@@ -29,6 +29,13 @@ endif()
 message(STATUS "PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
 
 ########################################################################
+# Resources
+########################################################################
+set(LIQUID_BLOCKS_GEN_PY "${PROJECT_SOURCE_DIR}/LiquidBlocksGen.py")
+file(GLOB BLOCKS_YAML "${PROJECT_SOURCE_DIR}/blocks/*.yaml")
+file(GLOB BLOCKS_TMPL "${PROJECT_SOURCE_DIR}/tmpl/*.tmpl.*")
+
+########################################################################
 # Preprocess the header
 ########################################################################
 set(LIQUID_H_SOURCE "${LIQUIDDSP_INCLUDE_DIRS}/liquid/liquid.h")
@@ -43,11 +50,20 @@ add_custom_command(
         "${LIQUID_H_SOURCE}" > "${LIQUID_H_PROCESSED}")
 
 ########################################################################
+# wrap enums
+########################################################################
+set(ENUMS_OUTPUT "${CMAKE_BINARY_DIR}/enums.cpp")
+add_custom_command(
+    OUTPUT "${ENUMS_OUTPUT}"
+    DEPENDS "${LIQUID_H_PROCESSED}"
+    DEPENDS "${LIQUID_BLOCKS_GEN_PY}"
+    DEPENDS "${BLOCKS_TMPL}"
+    COMMAND ${PYTHON_EXECUTABLE} -B "${LIQUID_BLOCKS_GEN_PY}" "${LIQUID_H_PROCESSED}" "ENUMS" "${ENUMS_OUTPUT}")
+list(APPEND BLOCK_SOURCES "${ENUMS_OUTPUT}")
+
+########################################################################
 # build rules for the blocks
 ########################################################################
-set(LIQUID_BLOCKS_GEN_PY "${PROJECT_SOURCE_DIR}/LiquidBlocksGen.py")
-file(GLOB BLOCKS_YAML "${PROJECT_SOURCE_DIR}/blocks/*.yaml")
-file(GLOB BLOCKS_TMPL "${PROJECT_SOURCE_DIR}/tmpl/*.tmpl.*")
 foreach(block_yaml ${BLOCKS_YAML})
     get_filename_component(name "${block_yaml}" NAME_WE)
     set(OUTPUT_FILE "${CMAKE_BINARY_DIR}/${name}.cpp")

@@ -18,12 +18,12 @@ ${blockClasses}
  **********************************************************************/
 
 % if subtypesArgs:
-Pothos::Block *make${blockClass}(${factoryArgs})
+Pothos::Block *make_${blockClass}(${factoryArgs})
 {
     % for subtype, subfactory, args in subtypesArgs:
     if (type == "${subtype}") return ${subfactory}::make(${args});
     % endfor
-    throw Pothos::InvalidArgumentException("make${blockClass}("+type+")", "Unknown type");
+    throw Pothos::InvalidArgumentException("make_${blockClass}("+type+")", "Unknown type");
 }
 % endif
 
