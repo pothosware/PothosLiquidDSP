@@ -11,6 +11,7 @@ import CppHeaderParser
 def parseHeader(contents):
 
     #stop warning, lexer doesn't understand restrict
+    #it comes from the #include <inttypes.h>
     contents = contents.replace('__restrict', '')
 
     #the lexer will consume comments as doxygen
@@ -39,6 +40,15 @@ def parseHeader(contents):
 class AttributeDict(dict):
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
+
+def extractDocumentation(data):
+    doxygen = data.get('doxygen', '')
+    for line in doxygen.splitlines():
+        for tok in line.split('/*!'):
+            tok = tok.split('*/')[0]
+            tok = tok.split('//!')[-1]
+            tok = tok.strip()
+            if tok: yield(tok)
 
 def extractBlockFunctions(blockName, headerData, commentLines):
     blockFunctions = dict()
@@ -78,7 +88,7 @@ def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
         results.append(AttributeDict(
             key=key,
             name=data.name,
-            docs=data.get('doxygen', ''),
+            doclines=extractDocumentation(data),
             data=data,
             rtnType=data.rtnType,
             externalParams=externalParams,
@@ -182,15 +192,13 @@ def generateBlockDesc(blockName, blockData, constructor, initializers, setters):
     #param documentation mapping
     paramDocs = dict()
     for function in [constructor] + initializers + setters:
-        for docline in function.docs.splitlines():
-            if '/*!' in docline:
-                for comment in docline.split('/*!'):
-                    match = re.match('^\s*(\w+)\s*:\s*(.*)\s*\*/', comment)
-                    if match: paramDocs[match.groups()[0]] = match.groups()[1]
-            elif '//!' in docline:
-                for comment in docline.split('//!'):
-                    match = re.match('^\s*(\w+)\s*:\s*(.*)\s*$', comment)
-                    if match: paramDocs[match.groups()[0]] = match.groups()[1]
+        for docline in function.doclines:
+            match = re.match('^\s*(\w+)\s*:\s*(.*)\s*$', docline)
+            if match: paramDocs[match.groups()[0]] = match.groups()[1]
+            if docline.count('(') != docline.count(')') or \
+                docline.count('[') != docline.count(']') or \
+                docline.count('{') != docline.count('}'):
+                print('Warning: bracket mismatch %s: "%s"'%(function.name, docline))
     #for key, data in paramDocs.items(): print key, data
 
     desc['params'] = list()
@@ -225,6 +233,8 @@ def generateBlockDesc(blockName, blockData, constructor, initializers, setters):
                 data['desc'] = [paramDocs[key]]
                 match = re.match('.*\[(.*)\]', paramDocs[key])
                 if match: data['units'] = match.groups()[0]
+            else:
+                print('Warning: missing documentation for %s(%s)'%(function.name, key))
 
             desc['params'].append(data)
 
@@ -336,26 +346,26 @@ import yaml
 
 if __name__ == '__main__':
     liquidH = sys.argv[1]
-    resource = sys.argv[2]
-    outputCpp = sys.argv[3]
+    resourceIn = sys.argv[2]
+    outputDest = sys.argv[3]
 
     #parse the header
     contentsH = open(liquidH).read()
     contentsLines = contentsH.splitlines()
     headerData = parseHeader(contentsH)
 
-    if resource == "ENUMS":
+    if resourceIn == "ENUMS":
         enumsTmplCpp = os.path.join(os.path.dirname(__file__), 'tmpl', 'LiquidEnums.tmpl.cpp')
         output = Template(open(enumsTmplCpp).read()).render(enums=headerData.enums)
-        open(outputCpp, 'w').write(output)
+        open(outputDest, 'w').write(output)
 
     else:
 
         #parse the blocks
-        blocksData = yaml.load(open(resource).read())
+        blocksData = yaml.load(open(resourceIn).read())
 
         #run the generator
         output = ""
         for blockName, blockData in blocksData.items():
             output += generateCpp(blockName, blockData, headerData, contentsLines)
-        open(outputCpp, 'w').write(output)
+        open(outputDest, 'w').write(output)
