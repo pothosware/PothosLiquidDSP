@@ -1,5 +1,6 @@
 gmskmod:
     name: GMSK Mod
+    categories: [/Modulation]
     defaults:
         _k: 4
         _m: 3
@@ -15,6 +16,7 @@ gmskmod:
 
 gmskdem:
     name: GMSK Demod
+    categories: [/Modulation]
     defaults:
         _k: 4
         _m: 3

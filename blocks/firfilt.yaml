@@ -1,5 +1,6 @@
 firfilt_kaiser:
     name: FIR Filter Kaiser
+    categories: [/Filter]
     key: firfilt
     subtypes:
         - rrrf
@@ -20,6 +21,7 @@ firfilt_kaiser:
 
 firfilt_rect:
     name: FIR Filter Rect
+    categories: [/Filter]
     key: firfilt
     subtypes:
         - rrrf
@@ -37,6 +39,7 @@ firfilt_rect:
 
 firfilt_nyquist:
     name: FIR Filter Nyquist
+    categories: [/Filter]
     key: firfilt
     subtypes:
         - rrrf

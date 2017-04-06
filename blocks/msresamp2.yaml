@@ -1,5 +1,6 @@
 msresamp2_interpolator:
     name: MS Half-band Interpolator
+    categories: [/Filter]
     key: msresamp2
     subtypes:
         - rrrf
@@ -23,6 +24,7 @@ msresamp2_interpolator:
 
 msresamp2_decimator:
     name: MS Half-band Decimator
+    categories: [/Filter]
     key: msresamp2
     subtypes:
         - rrrf

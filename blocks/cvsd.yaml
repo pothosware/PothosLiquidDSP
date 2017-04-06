@@ -1,5 +1,6 @@
 cvsd_encode:
     name: CVSD Encode
+    categories: [/Coding]
     key: cvsd
     defaults:
         _num_bits: 4
@@ -16,6 +17,7 @@ cvsd_encode:
 
 cvsd_decode:
     name: CVSD Decode
+    categories: [/Coding]
     key: cvsd
     defaults:
         _num_bits: 4

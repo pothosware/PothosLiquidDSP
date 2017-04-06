@@ -1,0 +1,109 @@
+#TODO create and sos -- need vector mapping for ptr + len
+
+iirfilt_prototype:
+    name: IIR Filter Prototype
+    categories: [/Filter]
+    key: iirfilt
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    defaults:
+        _ftype: LIQUID_IIRDES_BUTTER
+        _btype: LIQUID_IIRDES_BANDPASS
+        _format: LIQUID_IIRDES_SOS
+        _order: 4
+        _fc: 0.1
+        _f0: 0.0
+        _Ap: 1.0
+        _As: 40.0
+    constructor: create_prototype
+    inputs: x
+    outputs: y
+    work:
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK
+
+iirfilt_lowpass:
+    name: IIR Filter Lowpass
+    categories: [/Filter]
+    key: iirfilt
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    defaults:
+        _order: 4
+        _fc: 0.1
+    constructor: create_lowpass
+    inputs: x
+    outputs: y
+    work:
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK
+
+iirfilt_integrator:
+    name: IIR Integrator
+    categories: [/Filter]
+    key: iirfilt
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    constructor: create_integrator
+    inputs: x
+    outputs: y
+    work:
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK
+
+iirfilt_differentiator:
+    name: IIR Differentiator
+    categories: [/Filter]
+    key: iirfilt
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    constructor: create_differentiator
+    inputs: x
+    outputs: y
+    work:
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK
+
+iirfilt_dc_blocker:
+    name: IIR DC Blocker
+    categories: [/Filter]
+    key: iirfilt
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    defaults:
+        _alpha: 0.1
+    constructor: create_dc_blocker
+    inputs: x
+    outputs: y
+    work:
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK
+
+iirfilt_pll:
+    name: IIR Filter PLL
+    categories: [/Filter]
+    key: iirfilt
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    defaults:
+        _w: 0.1
+        _zeta: 1.0/sqrt(2)
+        _K: 1000
+    constructor: create_pll
+    inputs: x
+    outputs: y
+    work:
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK
