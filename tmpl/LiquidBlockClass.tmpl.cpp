@@ -9,7 +9,11 @@ public:
 
     ${blockClass}(${constructor.paramTypesStr}):
         % for param in constructor.params:
+        % if param in constructor.externalParams:
+        ${param.name}(${param.name}),
+        % else:
         ${param.name}(${param.default}),
+        % endif
         % endfor
         % for function in initializers + setters:
         % for param in function.params:

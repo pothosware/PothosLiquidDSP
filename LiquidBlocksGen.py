@@ -70,21 +70,35 @@ def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
             if not myFilter(key): continue
             keys.append(key)
 
+    def getParamType(p):
+        typemaps = blockData.get('typemaps', {})
+        if p['name'] not in typemaps: return p['type']
+        oldType = p['type']
+        newType = typemaps[p['name']]
+        if p['pointer']: oldType = oldType.replace('*', '').strip()
+        return newType.replace('T', oldType)
+
+    def paramToLiquidArg(param):
+        #we know liquid uses pointers, not vectors
+        #write the type mapping back into a pointer
+        if 'std::vector' in param.type:
+            return param.name + '.data()'
+        return param.name
+
     defaultsData = blockData.get('defaults', {})
     internalsData = blockData.get('internals', {})
     results = list()
     for key in keys:
         data = blockFunctions[key]
-        getType = lambda p: blockData.get('typemaps', {}).get(p['name'], p['type'])
         getDefault = lambda p: defaultsData.get(param['name'], internalsData.get(param['name'], param['name'] if dataKey == 'constructor' else None))
-        params = [AttributeDict(name=param['name'], type=getType(param), default=getDefault(param)) for param in data['parameters']]
+        params = [AttributeDict(name=param['name'], type=getParamType(param), default=getDefault(param)) for param in data['parameters']]
         if dataKey != 'constructor': params = params[1:] #strip object for function calls
         if dataKey == 'constructor' and len(params) == 1 and params[0].type == 'void': params = [] #skip foo(void)
 
         externalParams = [p for p in params if p.name not in internalsData]
         paramTypesStr = ', '.join(['%s %s'%(param.type, param.name) for param in externalParams])
         passArgsStr = ', '.join([param.name for param in externalParams])
-        paramArgsStr = ', '.join([param.name for param in params])
+        paramArgsStr = ', '.join(map(paramToLiquidArg, params))
 
         results.append(AttributeDict(
             key=key,
