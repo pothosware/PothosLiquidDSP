@@ -75,8 +75,9 @@ def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
     results = list()
     for key in keys:
         data = blockFunctions[key]
+        getType = lambda p: blockData.get('typemaps', {}).get(p['name'], p['type'])
         getDefault = lambda p: defaultsData.get(param['name'], internalsData.get(param['name'], param['name'] if dataKey == 'constructor' else None))
-        params = [AttributeDict(name=param['name'], type=param['type'], default=getDefault(param)) for param in data['parameters']]
+        params = [AttributeDict(name=param['name'], type=getType(param), default=getDefault(param)) for param in data['parameters']]
         if dataKey != 'constructor': params = params[1:] #strip object for function calls
         if dataKey == 'constructor' and len(params) == 1 and params[0].type == 'void': params = [] #skip foo(void)
 
@@ -173,7 +174,7 @@ from mako.template import Template
 import json
 import re
 
-def generateBlockDesc(blockName, blockData, constructor, initializers, setters):
+def generateBlockDesc(blockName, blockData, headerData, constructor, initializers, setters):
     desc = dict()
     desc['name'] = blockData['name']
     desc['path'] = '/liquid/'+blockName
@@ -188,6 +189,9 @@ def generateBlockDesc(blockName, blockData, constructor, initializers, setters):
             type=type,
             name=function.key,
             args=[param.name for param in function.externalParams]))
+
+    #enum mapping
+    enums = dict([(enum['name'], enum) for enum in headerData.enums])
 
     #param documentation mapping
     paramDocs = dict()
@@ -236,6 +240,11 @@ def generateBlockDesc(blockName, blockData, constructor, initializers, setters):
             else:
                 print('Warning: missing documentation for %s(%s)'%(function.name, key))
 
+            #enumerated options
+            if param.type in enums:
+                data['default'] = '"%s"'%data['default']
+                data['options'] = [dict(value='"%s"'%value['name'], name=value['name']) for value in enums[param.type]['values']]
+
             desc['params'].append(data)
 
     return desc
@@ -262,7 +271,7 @@ def generateCpp1(blockKey, blockName, blockData, headerData, contentsLines):
     worker = extractWorker(blockData, blockFunctions, inputs, outputs)
 
     #block desc
-    blockDesc = generateBlockDesc(blockName, blockData, constructor, initializers, setters)
+    blockDesc = generateBlockDesc(blockName, blockData, headerData, constructor, initializers, setters)
 
     #C++ class
     blockClassTmplCpp = os.path.join(os.path.dirname(__file__), 'tmpl', 'LiquidBlockClass.tmpl.cpp')
@@ -307,13 +316,13 @@ def generateCpp(blockName, blockData, headerData, contentsLines):
 
         #add subtypes to blockDesc
         typeParam = dict(
-            name = 'Type',
-            key = 'type',
+            name = 'Data Types',
+            key = 'dtype',
             desc = ['Select block data types'],
             preview = 'disable',
             options = [dict(name=s.upper(), value='"%s"'%s) for s in subtypes])
         blockDesc['params'].insert(0, typeParam)
-        blockDesc['args'].insert(0, 'type')
+        blockDesc['args'].insert(0, 'dtype')
         blockDesc['path'] = '/liquid/'+blockName
 
     #or just the single block entry

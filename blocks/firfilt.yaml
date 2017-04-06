@@ -35,5 +35,25 @@ firfilt_rect:
         calls: execute_block(x, N, y)
         mode: STANDARD_BLOCK
 
-#TODO firfilt_rnyquist
-#_type should be an enum in the liquid.h
+firfilt_nyquist:
+    name: FIR Filter Nyquist
+    key: firfilt
+    subtypes:
+        - rrrf
+        - crcf
+        - cccf
+    typemaps:
+        _type: liquid_firfilt_type
+    defaults:
+        _type: LIQUID_FIRFILT_RRC
+        _k: 4
+        _m: 7
+        _beta: 0.5
+        _mu: 0.0
+        _scale: 1
+    constructor: create_rnyquist
+    inputs: x
+    outputs: y
+    work:
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK
