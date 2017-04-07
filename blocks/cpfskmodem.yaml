@@ -1,0 +1,41 @@
+cpfskmod:
+    name: CPFSK Mod
+    categories: [/Modulation]
+    typemaps:
+        _type: liquid_cpfsk_filter
+    defaults:
+        _bps: 1
+        _h: 0.5
+        _k: 4
+        _m: 3
+        _beta:  0.35
+        _type: LIQUID_CPFSK_SQUARE
+    inputs: sym
+    outputs:
+        y:
+            reserve: _k
+    work:
+        calls: modulate(sym, y)
+        interp: _k
+        mode: STANDARD_LOOP
+
+cpfskdem:
+    name: CPFSK Demod
+    categories: [/Modulation]
+    typemaps:
+        _type: liquid_cpfsk_filter
+    defaults:
+        _bps: 1
+        _h: 0.5
+        _k: 4
+        _m: 3
+        _beta:  0.35
+        _type: LIQUID_CPFSK_SQUARE
+    inputs:
+        x:
+            reserve: _k
+    outputs: sym
+    work:
+        calls: sym = demodulate(x)
+        decim: _k
+        mode: STANDARD_LOOP

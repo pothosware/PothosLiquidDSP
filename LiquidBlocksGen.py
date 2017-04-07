@@ -110,7 +110,7 @@ def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
             name=data.name,
             doclines=extractDocumentation(data),
             data=data,
-            rtnType=data.rtnType,
+            returns=data.returns,
             externalParams=externalParams,
             params=params,
             paramArgsStr=paramArgsStr,
@@ -124,11 +124,12 @@ def extractWorkCalls(blockData):
     if isinstance(workCalls, str): workCalls = [workCalls]
 
     for workCall in workCalls:
-        m = re.match('(\w+)\((.+)\)', workCall)
-        name = m.groups()[0]
-        args = m.groups()[1].split(',')
+        m = re.match('((\w+)\s*=\s*)?(\w+)\((.+)\)', workCall)
+        ret = m.groups()[1]
+        name = m.groups()[2]
+        args = m.groups()[3].split(',')
         args = map(str.strip, args)
-        calls.append((name, args))
+        calls.append((ret, name, args))
 
     return calls
 
@@ -140,13 +141,20 @@ def extractPorts(dataKey, prefix, blockData, blockFunctions):
     for key, data in portData.items():
         key = str(key)
         argIdx = None
-        for workFcn, workArgs in workCalls:
+        for workRet, workFcn, workArgs in workCalls:
+            if workRet == key:
+                argIdx = -1
+                fcnKey = workFcn
             try:
                 argIdx = workArgs.index(key)+1
                 fcnKey = workFcn
             except: pass
         assert(argIdx is not None)
-        param = blockFunctions[fcnKey]['parameters'][argIdx]
+        if argIdx == -1: param = dict(
+            pointer=blockFunctions[fcnKey]['returns_pointer'],
+            type=blockFunctions[fcnKey]['returns'])
+        else:
+            param = blockFunctions[fcnKey]['parameters'][argIdx]
         type = param['type']
         if param['pointer']: type = type.replace('*', '').strip()
         portType = type
@@ -171,14 +179,19 @@ def extractWorker(blockData, blockFunctions, inputs, outputs):
     workData = blockData['work']
     workCalls = extractWorkCalls(blockData)
     functions = list()
-    for workFcn, workArgs in workCalls:
+    for workRet, workFcn, workArgs in workCalls:
         fcnData = blockFunctions[workFcn]
         funcArgs = list()
         for arg in workArgs:
             matches = [port for port in inputs + outputs if port.key == arg]
-            if not matches: funcArgs.append(arg)
-            else: funcArgs.append(matches[0].buffPass)
-        functions.append(AttributeDict(name=fcnData['name'], args=', '.join(funcArgs)))
+            if matches: funcArgs.append(matches[0].buffPass)
+            else: funcArgs.append(arg)
+        name = fcnData['name']
+        if workRet is not None:
+            matches = [port for port in inputs + outputs if port.key == workRet]
+            if matches: name = '%s = %s'%(matches[0].buffPass, name)
+            else: name = '%s = %s'%(workRet, name)
+        functions.append(AttributeDict(name=name, args=', '.join(funcArgs)))
     return AttributeDict(
         functions=functions,
         mode=workData.get('mode', 'STANDARD_LOOP'),

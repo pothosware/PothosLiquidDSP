@@ -66,7 +66,7 @@ public:
     % endfor
 
     % for function in getters:
-    ${function.rtnType} ${function.key}(void)
+    ${function.returns} ${function.key}(void)
     {
         return ${function.name}(_q);
     }
@@ -158,7 +158,7 @@ private:
     % endif
     % endfor
     % endfor
-    ${constructor.rtnType} _q;
+    ${constructor.returns} _q;
 
     % for input in inputs:
     Pothos::InputPort *${input.portVar};
