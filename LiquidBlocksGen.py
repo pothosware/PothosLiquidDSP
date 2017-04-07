@@ -14,7 +14,12 @@ def parseHeader(contents):
     #it comes from the #include <inttypes.h>
     contents = contents.replace('__restrict', '')
 
-    #the lexer will consume comments as doxygen
+    #add newlines lost from macro expansion back into the /**/ comments
+    #to ensure that the docs get associated with the proceeding function
+    contents = contents.replace('/*', '\n/*')
+    contents = contents.replace('*/', '*/\n')
+
+    #the lexer will consume comments as doxygen (add ! to trigger this)
     contents = contents.replace('//', '//!')
     contents = contents.replace('/*', '/*!')
 
@@ -208,11 +213,13 @@ def generateBlockDesc(blockName, blockData, headerData, constructor, initializer
     enums = dict([(enum['name'], enum) for enum in headerData.enums])
 
     #param documentation mapping
+    blockDocs = list()
     paramDocs = dict()
     for function in [constructor] + initializers + setters:
         for docline in function.doclines:
             match = re.match('^\s*(\w+)\s*:\s*(.*)\s*$', docline)
             if match: paramDocs[match.groups()[0]] = match.groups()[1]
+            elif function == constructor: blockDocs.append(docline)
             if docline.count('(') != docline.count(')') or \
                 docline.count('[') != docline.count(']') or \
                 docline.count('{') != docline.count('}'):
@@ -261,6 +268,7 @@ def generateBlockDesc(blockName, blockData, headerData, constructor, initializer
 
             desc['params'].append(data)
 
+    desc['docs'] = blockDocs
     return desc
 
 def generateCpp1(blockKey, blockName, blockData, headerData, contentsLines):
@@ -305,7 +313,7 @@ def generateCpp1(blockKey, blockName, blockData, headerData, contentsLines):
 
     return outCpp, blockDesc, tmplData
 
-def generateCpp(blockName, blockData, headerData, contentsLines):
+def generateCpp(resourceName, blockName, blockData, headerData, contentsLines):
 
     blockKey = blockData.get('key', blockName)
     subtypes = blockData.get('subtypes', [])
@@ -344,6 +352,10 @@ def generateCpp(blockName, blockData, headerData, contentsLines):
         outCpp, blockDesc, tmplData = generateCpp1(blockKey, blockName, blockData, headerData, contentsLines)
         factory = tmplData.blockClass+'::make'
         blockClassesCpp += outCpp
+
+    #refererence url
+    url = 'http://liquidsdr.org/doc/%s/'%resourceName
+    blockDesc['docs'].append('<br/>Reference: <a href="%s">%s</a>'%(url, url))
 
     #encode the block description into escaped JSON
     blockDescEscaped = ''.join([hex(ord(ch)).replace('0x', '\\x') for ch in json.dumps(blockDesc)])
@@ -385,10 +397,11 @@ if __name__ == '__main__':
     else:
 
         #parse the blocks
+        resourceName =  os.path.splitext(os.path.basename(resourceIn))[0]
         blocksData = yaml.load(open(resourceIn).read())
 
         #run the generator
         output = ""
         for blockName, blockData in blocksData.items():
-            output += generateCpp(blockName, blockData, headerData, contentsLines)
+            output += generateCpp(resourceName, blockName, blockData, headerData, contentsLines)
         open(outputDest, 'w').write(output)
