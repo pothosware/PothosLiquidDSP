@@ -2,10 +2,6 @@ iirfilt:
     name: IIR Filter
     categories: [/Filter]
     key: iirfilt
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _b: "[0]"
         _a: "[0]"
@@ -26,10 +22,6 @@ iirfilt_sos:
     name: IIR Filter SOS
     categories: [/Filter]
     key: iirfilt
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _B: "[0]"
         _A: "[0]"
@@ -49,10 +41,6 @@ iirfilt_prototype:
     name: IIR Filter Prototype
     categories: [/Filter]
     key: iirfilt
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _ftype: LIQUID_IIRDES_BUTTER
         _btype: LIQUID_IIRDES_BANDPASS
@@ -73,10 +61,6 @@ iirfilt_lowpass:
     name: IIR Filter Lowpass
     categories: [/Filter]
     key: iirfilt
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _order: 4
         _fc: 0.1
@@ -91,10 +75,6 @@ iirfilt_integrator:
     name: IIR Integrator
     categories: [/Filter]
     key: iirfilt
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     constructor: create_integrator
     inputs: x
     outputs: y
@@ -106,10 +86,6 @@ iirfilt_differentiator:
     name: IIR Differentiator
     categories: [/Filter]
     key: iirfilt
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     constructor: create_differentiator
     inputs: x
     outputs: y
@@ -121,10 +97,6 @@ iirfilt_dc_blocker:
     name: IIR DC Blocker
     categories: [/Filter]
     key: iirfilt
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _alpha: 0.1
     constructor: create_dc_blocker
@@ -138,10 +110,6 @@ iirfilt_pll:
     name: IIR Filter PLL
     categories: [/Filter]
     key: iirfilt
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _w: 0.1
         _zeta: 1.0/sqrt(2)

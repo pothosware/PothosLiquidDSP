@@ -2,10 +2,6 @@ firfilt_kaiser:
     name: FIR Filter Kaiser
     categories: [/Filter]
     key: firfilt
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _n: 240
         _fc: 0.1
@@ -23,10 +19,6 @@ firfilt_rect:
     name: FIR Filter Rect
     categories: [/Filter]
     key: firfilt
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _n: 240
         _scale: 1
@@ -41,10 +33,6 @@ firfilt_nyquist:
     name: FIR Filter Nyquist
     categories: [/Filter]
     key: firfilt
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     typemaps:
         _type: liquid_firfilt_type
     defaults:

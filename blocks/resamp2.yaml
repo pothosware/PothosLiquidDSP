@@ -2,10 +2,6 @@ resamp2_filter:
     name: Half-band Filter
     categories: [/Filter]
     key: resamp2
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _m: 7
         _f0: 0.0
@@ -24,10 +20,6 @@ resamp2_analyzer:
     name: Half-band Analyzer
     categories: [/Filter]
     key: resamp2
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _m: 7
         _f0: 0.0
@@ -48,10 +40,6 @@ resamp2_synthesizer:
     name: Half-band Synthesizer
     categories: [/Filter]
     key: resamp2
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _m: 7
         _f0: 0.0
@@ -72,10 +60,6 @@ resamp2_decimator:
     name: Half-band Decimator
     categories: [/Filter]
     key: resamp2
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _m: 7
         _f0: 0.0
@@ -93,10 +77,6 @@ resamp2_interpolator:
     name: Half-band Interpolator
     categories: [/Filter]
     key: resamp2
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _m: 7
         _f0: 0.0

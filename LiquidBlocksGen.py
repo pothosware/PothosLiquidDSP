@@ -55,7 +55,7 @@ def extractDocumentation(data):
             tok = tok.strip()
             if tok: yield(tok)
 
-def extractBlockFunctions(blockName, headerData, commentLines):
+def extractBlockFunctions(blockName, headerData):
     blockFunctions = dict()
     for func in headerData.functions:
         if not func['name'].startswith(blockName+'_'): continue
@@ -199,6 +199,23 @@ def extractWorker(blockData, blockFunctions, inputs, outputs):
         decim=workData.get('decim', 1),
         interp=workData.get('interp', 1))
 
+def extractSubtypes(blockKey, headerData):
+    blockNames = extractBlockFunctions(blockKey, headerData).keys()
+    subtypes = dict()
+    for fullName in blockNames:
+        if '_' not in fullName: return list()
+        subkey, name = fullName.split('_', 1)
+        if subkey not in subtypes: subtypes[subkey] = set()
+        subtypes[subkey].add(name)
+
+    values0 = subtypes[subtypes.keys()[0]]
+    for subkey, values in subtypes.items():
+        if values != values0: return list()
+
+    if subtypes:
+        print('Discovered subtypes for %s: %s'%(blockKey, subtypes.keys()))
+    return subtypes.keys()
+
 ########################################################################
 ## Invoke the generator
 ########################################################################
@@ -286,7 +303,7 @@ def generateBlockDesc(blockName, blockData, headerData, constructor, initializer
 
 def generateCpp1(blockKey, blockName, blockData, headerData, contentsLines):
 
-    blockFunctions = extractBlockFunctions(blockKey, headerData, contentsLines)
+    blockFunctions = extractBlockFunctions(blockKey, headerData)
     constructor = extractFunctionData('constructor', blockData, lambda x: x == 'create', blockFunctions)[0]
     destructor = extractFunctionData('destructor', blockData, lambda x: x == 'destroy', blockFunctions)[0]
     initializers = extractFunctionData('initializers', blockData, None, blockFunctions)
@@ -329,7 +346,7 @@ def generateCpp1(blockKey, blockName, blockData, headerData, contentsLines):
 def generateCpp(resourceName, blockName, blockData, headerData, contentsLines):
 
     blockKey = blockData.get('key', blockName)
-    subtypes = blockData.get('subtypes', [])
+    subtypes = blockData.get('subtypes', extractSubtypes(blockKey, headerData))
     factoryArgs = list()
     subtypesArgs = list()
 

@@ -1,8 +1,5 @@
 agc:
     name: AGC
-    subtypes:
-        - crcf
-        - rrrf
     defaults:
         _bt: 0.01
         _signal_level: 1.0

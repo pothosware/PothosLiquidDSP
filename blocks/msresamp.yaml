@@ -1,10 +1,6 @@
 msresamp:
     name: MS Resampler
     key: msresamp
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _r: 1.1
         _As: 60.0

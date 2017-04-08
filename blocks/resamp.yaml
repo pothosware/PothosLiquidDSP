@@ -1,9 +1,5 @@
 resamp:
     name: Arbitrary Resampler
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _rate: 1.1
         _m: 7

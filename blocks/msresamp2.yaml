@@ -2,10 +2,6 @@ msresamp2_interpolator:
     name: MS Half-band Interpolator
     categories: [/Filter]
     key: msresamp2
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _num_stages: 1
         _fc: 0.25
@@ -26,10 +22,6 @@ msresamp2_decimator:
     name: MS Half-band Decimator
     categories: [/Filter]
     key: msresamp2
-    subtypes:
-        - rrrf
-        - crcf
-        - cccf
     defaults:
         _num_stages: 1
         _fc: 0.25
