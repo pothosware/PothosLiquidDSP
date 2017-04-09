@@ -1,0 +1,8 @@
+tvmpch:
+    name: TV MP Channel
+    categories: [/Channel]
+    inputs: x
+    outputs: y
+    work:
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK

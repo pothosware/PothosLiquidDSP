@@ -1,5 +1,6 @@
 channel:
     name: Channel
+    categories: [/Channel]
     defaults:
         _noise_floor_dB: -60.0
         _SNRdB: 30.0

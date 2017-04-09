@@ -345,6 +345,7 @@ def generateCpp1(blockKey, blockName, blockData, headerData, contentsLines):
 
 def generateCpp(resourceName, blockName, blockData, headerData, contentsLines):
 
+    docKey = blockData.get('doc', resourceName)
     blockKey = blockData.get('key', blockName)
     subtypes = blockData.get('subtypes', extractSubtypes(blockKey, headerData))
     factoryArgs = list()
@@ -384,7 +385,7 @@ def generateCpp(resourceName, blockName, blockData, headerData, contentsLines):
         blockClassesCpp += outCpp
 
     #refererence url
-    url = 'http://liquidsdr.org/doc/%s/'%resourceName
+    url = 'http://liquidsdr.org/doc/%s/'%docKey
     blockDesc['docs'].append('<br/>Reference: <a href="%s">%s</a>'%(url, url))
 
     #encode the block description into escaped JSON
