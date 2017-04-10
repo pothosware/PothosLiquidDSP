@@ -1,0 +1,64 @@
+iirdecim:
+    name: IIR Decim
+    categories: [/Filter]
+    key: iirdecim
+    defaults:
+        _M: 2
+        _b: "[0]"
+        _a: "[0]"
+    typemaps:
+        _b: std::vector<T>
+        _a: std::vector<T>
+    internals:
+        _nb: _b.size()
+        _na: _a.size()
+    constructor: create
+    inputs:
+        x:
+            reserve: _M
+    outputs: y
+    work:
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK
+        decim: _M
+
+iirdecim_default:
+    name: IIR Decim Default
+    categories: [/Filter]
+    key: iirdecim
+    defaults:
+        _M: 2
+        _order: 4
+    constructor: create_default
+    inputs:
+        x:
+            reserve: _M
+    outputs: y
+    work:
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK
+        decim: _M
+
+iirdecim_prototype:
+    name: IIR Decim Prototype
+    categories: [/Filter]
+    key: iirdecim
+    defaults:
+        _M: 2
+        _ftype: LIQUID_IIRDES_BUTTER
+        _btype: LIQUID_IIRDES_BANDPASS
+        _format: LIQUID_IIRDES_SOS
+        _order: 4
+        _fc: 0.1
+        _f0: 0.0
+        _Ap: 1.0
+        _As: 40.0
+    constructor: create_prototype
+    inputs:
+        x:
+            reserve: _M
+    outputs: y
+    work:
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK
+        decim: _M

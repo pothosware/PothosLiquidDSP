@@ -430,6 +430,9 @@ if __name__ == '__main__':
         #parse the blocks
         resourceName =  os.path.splitext(os.path.basename(resourceIn))[0]
         blocksData = yaml.load(open(resourceIn).read())
+        if blocksData is None:
+            print('%s is empty'%resourceIn)
+            blocksData = dict()
 
         #run the generator
         output = ""
