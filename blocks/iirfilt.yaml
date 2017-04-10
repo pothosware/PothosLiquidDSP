@@ -1,5 +1,5 @@
 iirfilt:
-    name: IIR Filter
+    name: IIR Filter Taps
     categories: [/Filter]
     key: iirfilt
     defaults:

@@ -1,5 +1,5 @@
 iirdecim:
-    name: IIR Decim
+    name: IIR Decim Taps
     categories: [/Filter]
     key: iirdecim
     defaults:

@@ -1,3 +1,19 @@
+firfilt:
+    name: FIR Filter Taps
+    categories: [/Filter]
+    key: firfilt
+    defaults:
+        _h: "[1, 0, 0, 0]"
+    typemaps:
+        _h: std::vector<T>
+    internals:
+        _n: _h.size()
+    inputs: x
+    outputs: y
+    work:
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK
+
 firfilt_kaiser:
     name: FIR Filter Kaiser
     categories: [/Filter]
