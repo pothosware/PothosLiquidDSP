@@ -1,4 +1,29 @@
 ########################################################################
+## Logger output
+########################################################################
+HEADER = '\033[95m'
+OKBLUE = '\033[94m'
+OKGREEN = '\033[92m'
+WARNING = '\033[93m'
+FAIL = '\033[91m'
+ENDC = '\033[0m'
+
+#try to use colorama to support ANSI color codes on windows
+try:
+    from colorama import init
+    init()
+except ImportError: pass
+
+LOG = [""]
+
+import sys
+def header(msg, *args): sys.stderr.write(HEADER+msg%args+"\n"+ENDC);    LOG[0]+=msg%args+"\n"
+def notice(msg, *args): sys.stderr.write(OKGREEN+msg%args+"\n"+ENDC);   LOG[0]+="I: "+msg%args+"\n"
+def warning(msg, *args): sys.stderr.write(WARNING+msg%args+"\n"+ENDC);  LOG[0]+="W: "+msg%args+"\n"
+def error(msg, *args): sys.stderr.write(FAIL+msg%args+"\n"+ENDC);       LOG[0]+="E: "+msg%args+"\n"
+def blacklist(msg, *args): sys.stderr.write(OKBLUE+msg%args+"\n"+ENDC); LOG[0]+="B: "+msg%args+"\n"
+
+########################################################################
 ## Parse the liquid dsp header
 ########################################################################
 import os
@@ -212,8 +237,6 @@ def extractSubtypes(blockKey, headerData):
     for subkey, values in subtypes.items():
         if values != values0: return list()
 
-    if subtypes:
-        print('Discovered subtypes for %s: %s'%(blockKey, subtypes.keys()))
     return subtypes.keys()
 
 ########################################################################
@@ -253,7 +276,7 @@ def generateBlockDesc(blockName, blockData, headerData, constructor, initializer
             if docline.count('(') != docline.count(')') or \
                 docline.count('[') != docline.count(']') or \
                 docline.count('{') != docline.count('}'):
-                print('Warning: bracket mismatch %s: "%s"'%(function.name, docline))
+                warning('Bracket mismatch %s: "%s"'%(function.name, docline))
     #for key, data in paramDocs.items(): print key, data
 
     desc['params'] = list()
@@ -289,7 +312,7 @@ def generateBlockDesc(blockName, blockData, headerData, constructor, initializer
                 match = re.match('.*\[(.*)\]', paramDocs[key])
                 if match: data['units'] = match.groups()[0]
             else:
-                print('Warning: missing documentation for %s(%s)'%(function.name, key))
+                warning('Missing documentation for %s(%s)'%(function.name, key))
 
             #enumerated options
             if param.type in enums:
@@ -348,6 +371,8 @@ def generateCpp(resourceName, blockName, blockData, headerData, contentsLines, s
     docKey = blockData.get('doc', resourceName)
     blockKey = blockData.get('key', blockName)
     subtypes = blockData.get('subtypes', extractSubtypes(blockKey, headerData))
+    if subtypes: notice('Processing %s: %s'%(blockName, subtypes))
+    else: notice('Processing %s: [single block]'%(blockName))
     factoryArgs = list()
     subtypesArgs = list()
 
@@ -392,7 +417,7 @@ def generateCpp(resourceName, blockName, blockData, headerData, contentsLines, s
         teaser = blockSiteInfo.get('teaser')
         if title: blockDesc['docs'].append('<h2>%s</h2>'%title)
         if teaser: blockDesc['docs'].append('<p>%s</p>'%teaser)
-    else: print('Warning: No site teaser found for "%s"'%blockSiteKey)
+    else: warning('No site teaser found for "%s"'%blockSiteKey)
     url = 'http://liquidsdr.org/%s'%blockSiteKey
     blockDesc['docs'].append('<br/>Reference: <a href="%s">%s</a>'%(url, url))
 
@@ -422,6 +447,7 @@ if __name__ == '__main__':
     liquidH = sys.argv[1]
     resourceIn = sys.argv[2]
     outputDest = sys.argv[3]
+    header('Begin parsing and generation: %s -> %s'%(os.path.basename(resourceIn), os.path.basename(outputDest)))
 
     #parse the header
     contentsH = open(liquidH).read()
@@ -432,7 +458,7 @@ if __name__ == '__main__':
     siteInfo = dict()
     siteJson = os.path.join(os.path.dirname(outputDest), 'site.json')
     if os.path.exists(siteJson): siteInfo = json.loads(open(siteJson).read())
-    else: print('Warning: Site info not found, doc teasers will be missing!')
+    else: warning('Site info not found, doc teasers will be missing!')
 
     if resourceIn == "ENUMS":
         enumsTmplCpp = os.path.join(os.path.dirname(__file__), 'tmpl', 'LiquidEnums.tmpl.cpp')
@@ -445,7 +471,7 @@ if __name__ == '__main__':
         resourceName =  os.path.splitext(os.path.basename(resourceIn))[0]
         blocksData = yaml.load(open(resourceIn).read())
         if blocksData is None:
-            print('%s is empty'%resourceIn)
+            warning('%s is empty'%resourceIn)
             blocksData = dict()
 
         #run the generator
@@ -453,3 +479,4 @@ if __name__ == '__main__':
         for blockName, blockData in blocksData.items():
             output += generateCpp(resourceName, blockName, blockData, headerData, contentsLines, siteInfo)
         open(outputDest, 'w').write(output)
+        open(outputDest+'.log', 'w').write(LOG[0])
