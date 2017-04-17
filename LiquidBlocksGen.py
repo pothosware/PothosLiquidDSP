@@ -343,7 +343,7 @@ def generateCpp1(blockKey, blockName, blockData, headerData, contentsLines):
 
     return outCpp, blockDesc, tmplData
 
-def generateCpp(resourceName, blockName, blockData, headerData, contentsLines):
+def generateCpp(resourceName, blockName, blockData, headerData, contentsLines, siteInfo):
 
     docKey = blockData.get('doc', resourceName)
     blockKey = blockData.get('key', blockName)
@@ -384,8 +384,16 @@ def generateCpp(resourceName, blockName, blockData, headerData, contentsLines):
         factory = tmplData.blockClass+'::make'
         blockClassesCpp += outCpp
 
-    #refererence url
-    url = 'http://liquidsdr.org/doc/%s/'%docKey
+    #refererence url and teaser docs
+    blockSiteKey = 'doc/%s/'%docKey
+    blockSiteInfo = siteInfo.get(blockSiteKey)
+    if blockSiteInfo:
+        title = blockSiteInfo.get('title')
+        teaser = blockSiteInfo.get('teaser')
+        if title: blockDesc['docs'].append('<h2>%s</h2>'%title)
+        if teaser: blockDesc['docs'].append('<p>%s</p>'%teaser)
+    else: print('Warning: No site teaser found for "%s"'%blockSiteKey)
+    url = 'http://liquidsdr.org/%s'%blockSiteKey
     blockDesc['docs'].append('<br/>Reference: <a href="%s">%s</a>'%(url, url))
 
     #encode the block description into escaped JSON
@@ -420,6 +428,12 @@ if __name__ == '__main__':
     contentsLines = contentsH.splitlines()
     headerData = parseHeader(contentsH)
 
+    #parse site.json
+    siteInfo = dict()
+    siteJson = os.path.join(os.path.dirname(outputDest), 'site.json')
+    if os.path.exists(siteJson): siteInfo = json.loads(open(siteJson).read())
+    else: print('Warning: Site info not found, doc teasers will be missing!')
+
     if resourceIn == "ENUMS":
         enumsTmplCpp = os.path.join(os.path.dirname(__file__), 'tmpl', 'LiquidEnums.tmpl.cpp')
         output = Template(open(enumsTmplCpp).read()).render(enums=headerData.enums)
@@ -437,5 +451,5 @@ if __name__ == '__main__':
         #run the generator
         output = ""
         for blockName, blockData in blocksData.items():
-            output += generateCpp(resourceName, blockName, blockData, headerData, contentsLines)
+            output += generateCpp(resourceName, blockName, blockData, headerData, contentsLines, siteInfo)
         open(outputDest, 'w').write(output)

@@ -29,6 +29,14 @@ endif()
 message(STATUS "PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
 
 ########################################################################
+# Documentation blubs
+########################################################################
+set(LIQUID_SITE_JSON "${CMAKE_BINARY_DIR}/site.json")
+if (NOT EXISTS "${LIQUID_SITE_JSON}")
+    file(DOWNLOAD "http://liquidsdr.org/site.json" "${LIQUID_SITE_JSON}")
+endif()
+
+########################################################################
 # Resources
 ########################################################################
 set(LIQUID_BLOCKS_GEN_PY "${PROJECT_SOURCE_DIR}/LiquidBlocksGen.py")
