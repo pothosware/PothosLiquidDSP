@@ -29,24 +29,25 @@ endif()
 message(STATUS "PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
 
 ########################################################################
-# Documentation blubs
-########################################################################
-set(LIQUID_SITE_JSON "${CMAKE_BINARY_DIR}/site.json")
-if (NOT EXISTS "${LIQUID_SITE_JSON}")
-    file(DOWNLOAD "http://liquidsdr.org/site.json" "${LIQUID_SITE_JSON}")
-endif()
-
-########################################################################
 # Resources
 ########################################################################
 set(LIQUID_BLOCKS_GEN_PY "${PROJECT_SOURCE_DIR}/LiquidBlocksGen.py")
 file(GLOB BLOCKS_YAML "${PROJECT_SOURCE_DIR}/blocks/*.yaml")
 file(GLOB BLOCKS_TMPL "${PROJECT_SOURCE_DIR}/tmpl/*.tmpl.*")
+set(LIQUID_H_SOURCE "${LIQUIDDSP_INCLUDE_DIRS}/liquid/liquid.h")
+
+########################################################################
+# Documentation blubs
+########################################################################
+set(LIQUID_SITE_JSON "${CMAKE_BINARY_DIR}/site.json")
+if (NOT EXISTS "${LIQUID_SITE_JSON}" OR "${LIQUID_H_SOURCE}" IS_NEWER_THAN "${LIQUID_SITE_JSON}")
+    message(STATUS "Downloading 'site.json' from http://liquidsdr.org/")
+    file(DOWNLOAD "http://liquidsdr.org/site.json" "${LIQUID_SITE_JSON}")
+endif()
 
 ########################################################################
 # Preprocess the header
 ########################################################################
-set(LIQUID_H_SOURCE "${LIQUIDDSP_INCLUDE_DIRS}/liquid/liquid.h")
 set(LIQUID_H_PROCESSED "${CMAKE_BINARY_DIR}/liquid.h")
 add_custom_command(
     OUTPUT "${LIQUID_H_PROCESSED}"
