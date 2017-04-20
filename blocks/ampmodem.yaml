@@ -1,0 +1,29 @@
+ampmod:
+    name: Amp Mod
+    key: ampmodem
+    categories: [/Modulation]
+    defaults:
+        _m: 0.1
+        _fc: 0.0
+        _type: LIQUID_AMPMODEM_USB
+        _suppressed_carrier: 0
+    inputs: x
+    outputs: y
+    work:
+        calls: modulate(x, y)
+        mode: STANDARD_LOOP
+
+ampdem:
+    name: Amp Demod
+    key: ampmodem
+    categories: [/Modulation]
+    defaults:
+        _m: 0.1
+        _fc: 0.0
+        _type: LIQUID_AMPMODEM_USB
+        _suppressed_carrier: 0
+    inputs: x
+    outputs: y
+    work:
+        calls: demodulate(y, x)
+        mode: STANDARD_LOOP
