@@ -252,8 +252,7 @@ def generateBlockDesc(blockName, blockData, headerData, constructor, initializer
     desc['path'] = '/liquid/'+blockName
     desc['args'] = [param['name'] for param in constructor.externalParams]
     desc['keywords'] = blockData.get('keywords', [])
-    desc['categories'] = blockData.get('categories', [])
-    desc['categories'].append('/Liquid DSP')
+    desc['categories'] = ['/LiquidDSP'+c for c in blockData.get('categories', [])]
 
     desc['calls'] = list()
     for type, functions in [('initializer', initializers), ('setter', setters)]:
