@@ -1,0 +1,68 @@
+eqlms:
+    name: LMS Equalizer Taps
+    categories: [/Equalizer]
+    doc: equalization
+    key: eqlms
+    defaults:
+        _h: "[1, 0, 0, 0]"
+        _k: 2
+        _lambda: 0.100
+    typemaps:
+        _h: std::vector<T>
+    internals:
+        _h_len: _h.size()
+    constructor: create
+    inputs:
+        #fixme 1 -> _k
+        x:
+            reserve: 1
+    outputs: y
+    work:
+        calls: execute_block(1, x, N, y)
+        mode: STANDARD_BLOCK
+        decim: 1
+
+eqlms_rnyquist:
+    name: LMS Equalizer Nyquist
+    categories: [/Equalizer]
+    doc: equalization
+    key: eqlms
+    defaults:
+        _type: LIQUID_FIRFILT_RRC
+        _k: 2
+        _m: 3
+        _beta: 0.3
+        _dt: 0
+        _lambda: 0.100
+    typemaps:
+        _type: liquid_firfilt_type
+    constructor: create_rnyquist
+    inputs:
+        x:
+            reserve: _k
+    outputs: y
+    work:
+        calls: execute_block(_k, x, N, y)
+        mode: STANDARD_BLOCK
+        decim: _k
+
+eqlms_lowpass:
+    name: LMS Equalizer Lowpass
+    categories: [/Equalizer]
+    doc: equalization
+    key: eqlms
+    defaults:
+        _h_len: 42
+        _fc: 0.25
+        _k: 2
+        _lambda: 0.100
+    constructor: create_lowpass
+    inputs:
+        #fixme 1 -> _k
+        x:
+            reserve: 1
+    outputs: y
+    work:
+        calls: execute_block(1, x, N, y)
+        mode: STANDARD_BLOCK
+        decim: 1
