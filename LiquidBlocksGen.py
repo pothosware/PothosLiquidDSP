@@ -331,6 +331,7 @@ def generateCpp1(blockKey, blockName, blockData, headerData, contentsLines):
     initializers = extractFunctionData('initializers', blockData, None, blockFunctions)
     setters = extractFunctionData('setters', blockData, lambda x: x.startswith('set_'), blockFunctions)
     getters = extractFunctionData('getters', blockData, lambda x: x.startswith('get_'), blockFunctions)
+    getters = [g for g in getters if not g.params] #cant handle getters with pointers for outputs yet
     activators = extractFunctionData('activators', blockData, lambda x: x == 'reset', blockFunctions)
     inputs = extractPorts('inputs', 'in', blockData, blockFunctions)
     outputs = extractPorts('outputs', 'out', blockData, blockFunctions)
