@@ -117,18 +117,22 @@ def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
 
     defaultsData = blockData.get('defaults', {})
     internalsData = blockData.get('internals', {})
+    externalsData = blockData.get('externals', {})
     results = list()
     for key in keys:
         data = blockFunctions[key]
         getDefault = lambda p: defaultsData.get(param['name'], internalsData.get(param['name'], param['name'] if dataKey == 'constructor' else None))
         params = [AttributeDict(name=param['name'], type=getParamType(param), default=getDefault(param)) for param in data['parameters']]
+        for extParamName, extParamType in externalsData.items():
+            params.append(AttributeDict(name=extParamName, type=extParamType, default=extParamName))
         if dataKey != 'constructor': params = params[1:] #strip object for function calls
         if dataKey == 'constructor' and len(params) == 1 and params[0].type == 'void': params = [] #skip foo(void)
 
         externalParams = [p for p in params if p.name not in internalsData]
+        internalParams = [p for p in params if p.name not in externalsData]
         paramTypesStr = ', '.join(['%s %s'%(param.type, param.name) for param in externalParams])
         passArgsStr = ', '.join([param.name for param in externalParams])
-        paramArgsStr = ', '.join(map(paramToLiquidArg, params))
+        paramArgsStr = ', '.join(map(paramToLiquidArg, internalParams))
 
         results.append(AttributeDict(
             key=key,
