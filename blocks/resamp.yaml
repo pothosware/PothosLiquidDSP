@@ -1,5 +1,6 @@
 resamp:
     name: Arbitrary Resampler
+    categories: [/Filter]
     defaults:
         _rate: 1.1
         _m: 7

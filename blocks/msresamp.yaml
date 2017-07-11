@@ -1,5 +1,6 @@
 msresamp:
     name: MS Resampler
+    categories: [/Filter]
     key: msresamp
     defaults:
         _r: 1.1
