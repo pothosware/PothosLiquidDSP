@@ -1,0 +1,11 @@
+autocorr:
+    name: Auto-correlator
+    categories: [/Correlator]
+    defaults:
+        _window_size: 60
+        _delay: 20
+    inputs: x
+    outputs: y
+    work:
+        calls: execute_block(x, N, y)
+        mode: STANDARD_BLOCK
