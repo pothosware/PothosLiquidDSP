@@ -137,7 +137,7 @@ def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
         results.append(AttributeDict(
             key=key,
             name=data.name,
-            doclines=extractDocumentation(data),
+            doclines=list(extractDocumentation(data)),
             data=data,
             returns=data.returns,
             externalParams=externalParams,
@@ -280,6 +280,14 @@ def generateBlockDesc(blockName, blockData, headerData, constructor, initializer
                 docline.count(')')+docline.count(']') or \
                 docline.count('{') != docline.count('}'):
                 warning('Bracket mismatch %s: "%s"'%(function.name, docline))
+
+    #missing format, but there is only one line and one parameter
+    for function in initializers + setters:
+        if len(function.params) != 1: continue
+        if function.params[0].name in paramDocs: continue
+        if len(function.doclines) != 1: continue
+        paramDocs[function.params[0].name] = function.doclines[0]
+
     #for key, data in paramDocs.items(): print key, data
 
     desc['params'] = list()
