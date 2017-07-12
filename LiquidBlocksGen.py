@@ -276,8 +276,8 @@ def generateBlockDesc(blockName, blockData, headerData, constructor, initializer
             match = re.match('^\s*(\w+)\s*:\s*(.*)\s*$', docline)
             if match: paramDocs[match.groups()[0]] = match.groups()[1]
             elif function == constructor: blockDocs.append(docline)
-            if docline.count('(') != docline.count(')') or \
-                docline.count('[') != docline.count(']') or \
+            if docline.count('(')+docline.count('[') != \
+                docline.count(')')+docline.count(']') or \
                 docline.count('{') != docline.count('}'):
                 warning('Bracket mismatch %s: "%s"'%(function.name, docline))
     #for key, data in paramDocs.items(): print key, data
