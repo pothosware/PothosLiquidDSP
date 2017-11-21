@@ -7,7 +7,7 @@ project(PothosLiquidDSP CXX)
 ########################################################################
 # Pothos library
 ########################################################################
-find_package(Pothos "0.4.0" CONFIG REQUIRED)
+find_package(Pothos "0.6.0" CONFIG REQUIRED)
 
 ########################################################################
 # Find liquid DSP

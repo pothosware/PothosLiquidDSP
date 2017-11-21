@@ -83,7 +83,7 @@ public:
     {
         //get pointers to port buffers
         % for port in inputs + outputs:
-        auto ${port.buffVar} = ${port.portVar}->buffer().as<${port.type} *>();
+        ${port.type} *${port.buffVar} = ${port.portVar}->buffer();
         % endfor
 
         //calculate available input
