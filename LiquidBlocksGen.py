@@ -121,7 +121,7 @@ def extractFunctionData(dataKey, blockData, myFilter, blockFunctions):
     results = list()
     for key in keys:
         data = blockFunctions[key]
-        getDefault = lambda p: defaultsData.get(param['name'], internalsData.get(param['name'], param['name'] if dataKey == 'constructor' else None))
+        getDefault = lambda p: defaultsData.get(p['name'], internalsData.get(p['name'], p['name'] if dataKey == 'constructor' else None))
         params = [AttributeDict(name=param['name'], type=getParamType(param), default=getDefault(param)) for param in data['parameters']]
         for extParamName, extParamType in externalsData.items():
             params.append(AttributeDict(name=extParamName, type=extParamType, default=extParamName))
@@ -157,7 +157,7 @@ def extractWorkCalls(blockData):
         ret = m.groups()[1]
         name = m.groups()[2]
         args = m.groups()[3].split(',')
-        args = map(str.strip, args)
+        args = list(map(str.strip, args))
         calls.append((ret, name, args))
 
     return calls
@@ -237,7 +237,7 @@ def extractSubtypes(blockKey, headerData):
         if subkey not in subtypes: subtypes[subkey] = set()
         subtypes[subkey].add(name)
 
-    values0 = subtypes[subtypes.keys()[0]]
+    values0 = subtypes[list(subtypes)[0]]
     for subkey, values in subtypes.items():
         if values != values0: return list()
 
