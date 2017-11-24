@@ -35,10 +35,6 @@ import CppHeaderParser
 
 def parseHeader(contents):
 
-    #stop warning, lexer doesn't understand restrict
-    #it comes from the #include <inttypes.h>
-    contents = contents.replace('__restrict', '')
-
     #add newlines lost from macro expansion back into the /**/ comments
     #to ensure that the docs get associated with the proceeding function
     contents = contents.replace('/*', '\n/*')
