@@ -15,6 +15,11 @@ find_package(Pothos "0.4.0" CONFIG REQUIRED)
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 find_package(LIQUIDDSP REQUIRED)
 
+if (MSVC)
+    #force std::complex<> typedefs in liquiddsp
+    add_definitions(-D_LIBCPP_COMPLEX)
+endif (MSVC)
+
 message(STATUS "LIQUIDDSP_INCLUDE_DIRS: ${LIQUIDDSP_INCLUDE_DIRS}")
 message(STATUS "LIQUIDDSP_LIBRARIES: ${LIQUIDDSP_LIBRARIES}")
 
@@ -48,16 +53,35 @@ endif()
 ########################################################################
 # Preprocess the header
 ########################################################################
+set(LIQUID_H_NO_INCLUDES "${CMAKE_BINARY_DIR}/liquid_no_includes.h")
+add_custom_command(
+    OUTPUT "${LIQUID_H_NO_INCLUDES}"
+    DEPENDS "${LIQUID_H_SOURCE}"
+    COMMAND ${PYTHON_EXECUTABLE}
+        "${PROJECT_SOURCE_DIR}/StripInclude.py"
+        "${LIQUID_H_SOURCE}"
+        "${LIQUID_H_NO_INCLUDES}")
+
 set(LIQUID_H_PROCESSED "${CMAKE_BINARY_DIR}/liquid.h")
+if (MSVC)
 add_custom_command(
     OUTPUT "${LIQUID_H_PROCESSED}"
-    DEPENDS "${LIQUID_H_SOURCE}"
+    DEPENDS "${LIQUID_H_NO_INCLUDES}"
+    COMMAND ${CMAKE_CXX_COMPILER}
+        /EP #preprocessor, no line markers
+        /C #leave comments
+        /Tp #c++ source
+        "${LIQUID_H_NO_INCLUDES}" > "${LIQUID_H_PROCESSED}")
+else()
+add_custom_command(
+    OUTPUT "${LIQUID_H_PROCESSED}"
+    DEPENDS "${LIQUID_H_NO_INCLUDES}"
     COMMAND ${CMAKE_CXX_COMPILER}
         -E #preprocessor
         -CC #leave comments
         -P #no line markers
-        "${LIQUID_H_SOURCE}" > "${LIQUID_H_PROCESSED}")
-
+        "${LIQUID_H_NO_INCLUDES}" > "${LIQUID_H_PROCESSED}")
+endif()
 ########################################################################
 # wrap enums
 ########################################################################
