@@ -88,4 +88,4 @@ resamp2_interpolator:
     work:
         calls: decim_execute(x, y)
         mode: STANDARD_LOOP
-        ionterp: 2
+        interp: 2
