@@ -86,6 +86,6 @@ resamp2_interpolator:
         y:
             reserve: 2
     work:
-        calls: decim_execute(x, y)
+        calls: interp_execute(x, y)
         mode: STANDARD_LOOP
         interp: 2
