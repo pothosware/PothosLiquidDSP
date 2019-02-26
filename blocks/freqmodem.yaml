@@ -1,4 +1,4 @@
-fskmod:
+freqmod:
     name: Freq Mod
     doc: freqmodem
     key: freqmod
@@ -11,7 +11,7 @@ fskmod:
         calls: modulate(x, y)
         mode: STANDARD_LOOP
 
-fskdem:
+freqdem:
     name: Freq Demod
     doc: freqmodem
     key: freqdem
