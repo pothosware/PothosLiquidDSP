@@ -1,0 +1,25 @@
+freqmod:
+    name: Freq Mod
+    doc: freqmodem
+    key: freqmod
+    categories: [/Modulation]
+    defaults:
+        _kf: 0.1
+    inputs: x
+    outputs: y
+    work:
+        calls: modulate(x, y)
+        mode: STANDARD_LOOP
+
+freqdem:
+    name: Freq Demod
+    doc: freqmodem
+    key: freqdem
+    categories: [/Modulation]
+    defaults:
+        _kf: 0.1
+    inputs: x
+    outputs: y
+    work:
+        calls: demodulate(x, y)
+        mode: STANDARD_LOOP
