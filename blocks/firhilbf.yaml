@@ -1,0 +1,61 @@
+firhilf_r2c:
+    name: FIR Hilbert Real To Complex
+    categories: [/Filter]
+    doc: firhilb
+    key: firhilbf
+    defaults:
+        _m: 5
+        _As: 60
+    inputs: x
+    outputs: y
+    work:
+        calls: r2c_execute(x, y)
+        mode: STANDARD_LOOP
+
+firhilf_c2r:
+    name: FIR Hilbert Complex To Real
+    categories: [/Filter]
+    doc: firhilb
+    key: firhilbf
+    defaults:
+        _m: 5
+        _As: 60
+    inputs: x
+    outputs: y
+    work:
+        calls: c2r_execute(x, y)
+        mode: STANDARD_LOOP
+
+firhilf_decim:
+    name: FIR Hilbert Real To Complex Decimator
+    categories: [/Filter]
+    doc: firhilb
+    key: firhilbf
+    defaults:
+        _m: 5
+        _As: 60
+    inputs:
+        x:
+            reserve: 2
+    outputs: y
+    work:
+        calls: decim_execute(x, y)
+        mode: STANDARD_LOOP
+        decim: 2
+
+firhilf_interp:
+    name: FIR Hilbert Complex To Real Interpolator
+    categories: [/Filter]
+    doc: firhilb
+    key: firhilbf
+    defaults:
+        _m: 5
+        _As: 60
+    inputs: x
+    outputs:
+        y:
+            reserve: 2
+    work:
+        calls: interp_execute(x, y)
+        mode: STANDARD_LOOP
+        interp: 2
