@@ -21,9 +21,11 @@ firhilf_c2r:
         _m: 5
         _As: 60
     inputs: x
-    outputs: y
+    outputs:
+        y0: {}
+        y1: {}
     work:
-        calls: c2r_execute(x, y)
+        calls: c2r_execute(x, y0, y1)
         mode: STANDARD_LOOP
 
 firhilf_decim:
