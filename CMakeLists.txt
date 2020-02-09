@@ -116,6 +116,8 @@ foreach(block_yaml ${BLOCKS_YAML})
     list(APPEND BLOCK_SOURCES "${OUTPUT_FILE}")
 endforeach(block_yaml)
 
+list(APPEND BLOCK_SOURCES LiquidInfo.cpp)
+
 ########################################################################
 # Build the module
 ########################################################################
