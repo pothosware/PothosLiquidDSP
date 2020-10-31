@@ -52,7 +52,7 @@ def parseHeader(contents):
     while True:
         s = contents.find('typedef enum', s)
         if s < 0: break
-        e = contents.find(';', s)
+        e = contents.find(';\n', s)
         enum = contents[s:e]
         name = re.findall('\w+', enum, re.MULTILINE)[-1]
         contents = contents.replace(enum, enum.replace('typedef enum', 'enum %s'%name))
