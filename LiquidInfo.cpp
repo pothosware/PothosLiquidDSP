@@ -5,6 +5,7 @@
 
 #include <Poco/Format.h>
 
+#include <complex> //need complex before liquid
 #include <liquid/liquid.h>
 
 #include <string>
