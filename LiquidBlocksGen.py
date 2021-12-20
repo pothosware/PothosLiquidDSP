@@ -340,6 +340,7 @@ def generateCpp1(blockKey, blockName, blockData, headerData, contentsLines):
     setters = extractFunctionData('setters', blockData, lambda x: x.startswith('set_'), blockFunctions)
     getters = extractFunctionData('getters', blockData, lambda x: x.startswith('get_'), blockFunctions)
     getters = [g for g in getters if not g.params] #cant handle getters with pointers for outputs yet
+    getters = [g for g in getters if '*' not in g.data['rtnType']] #cant handle getters with pointer returns
     activators = extractFunctionData('activators', blockData, lambda x: x == 'reset', blockFunctions)
     inputs = extractPorts('inputs', 'in', blockData, blockFunctions)
     outputs = extractPorts('outputs', 'out', blockData, blockFunctions)
@@ -477,7 +478,7 @@ if __name__ == '__main__':
 
         #parse the blocks
         resourceName =  os.path.splitext(os.path.basename(resourceIn))[0]
-        blocksData = yaml.load(open(resourceIn).read())
+        blocksData = yaml.load(open(resourceIn).read(), Loader=yaml.FullLoader)
         if blocksData is None:
             warning('%s is empty'%resourceIn)
             blocksData = dict()
