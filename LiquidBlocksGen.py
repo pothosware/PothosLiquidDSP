@@ -478,7 +478,7 @@ if __name__ == '__main__':
 
         #parse the blocks
         resourceName =  os.path.splitext(os.path.basename(resourceIn))[0]
-        blocksData = yaml.load(open(resourceIn).read())
+        blocksData = yaml.load(open(resourceIn).read(), Loader=yaml.FullLoader)
         if blocksData is None:
             warning('%s is empty'%resourceIn)
             blocksData = dict()
