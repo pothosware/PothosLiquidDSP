@@ -1,67 +1,63 @@
-firfilt:
-    name: FIR Filter Taps
+firinterp:
+    name: FIR Interp Taps
     categories: [/Filter]
-    key: firfilt
+    key: firinterp
     defaults:
+        _M: 2
         _h: "[1, 0, 0, 0]"
         _scale: 1
     typemaps:
         _h: std::vector<T>
     internals:
-        _n: _h.size()
+        _h_len: _h.size()
+    constructor: create
     inputs: x
-    outputs: y
+    outputs:
+        y:
+            reserve: _M
     work:
         calls: execute_block(x, N, y)
         mode: STANDARD_BLOCK
+        interp: _M
 
-firfilt_kaiser:
-    name: FIR Filter Kaiser
+firinterp_kaiser:
+    name: FIR Interp Kaiser
     categories: [/Filter]
-    key: firfilt
+    key: firinterp
     defaults:
-        _n: 240
-        _fc: 0.1
+        _M: 2
+        _m: 120
         _As: 60.0
-        _mu: 0.0
         _scale: 1
     constructor: create_kaiser
     inputs: x
-    outputs: y
+    outputs:
+        y:
+            reserve: _M
     work:
         calls: execute_block(x, N, y)
         mode: STANDARD_BLOCK
+        interp: _M
 
-firfilt_rect:
-    name: FIR Filter Rect
+firinterp_prototype:
+    name: FIR Interp Prototype
     categories: [/Filter]
-    key: firfilt
-    defaults:
-        _n: 240
-        _scale: 1
-    constructor: create_rect
-    inputs: x
-    outputs: y
-    work:
-        calls: execute_block(x, N, y)
-        mode: STANDARD_BLOCK
-
-firfilt_nyquist:
-    name: FIR Filter Nyquist
-    categories: [/Filter]
-    key: firfilt
+    key: firinterp
     typemaps:
         _type: liquid_firfilt_type
     defaults:
         _type: LIQUID_FIRFILT_RRC
-        _k: 4
+        _M: 2
         _m: 7
         _beta: 0.5
-        _mu: 0.0
+        _dt: 0.0
         _scale: 1
-    constructor: create_rnyquist
+    constructor: create_prototype
     inputs: x
-    outputs: y
+    outputs:
+        y:
+            reserve: _M
     work:
         calls: execute_block(x, N, y)
         mode: STANDARD_BLOCK
+        interp: _M
